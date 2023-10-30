@@ -1,0 +1,6 @@
+[tool.black]
+line-length = 100
+
+[tool.flake8]
+extend-ignore = 'E203, E704'
+max-line-length = 100

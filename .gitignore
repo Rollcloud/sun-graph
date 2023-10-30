@@ -1,0 +1,8 @@
+# Environments
+/*venv*/
+
+# IDEs
+/.vscode/
+
+# Application
+/tmp/
