@@ -1,0 +1,39 @@
+---
+define: &white 'white'
+define: &daylight "#ffe577"
+define: &sunlight "#ef4745"
+define: &twilight "#6279b8"
+define: &nightlight "#4a6194"
+
+colours:
+  white: *white
+  daylight: *daylight
+  sunlight: *sunlight
+  twilight: *twilight
+  nightlight: *nightlight
+
+print:
+  grid_alpha: 0.85
+  fills:
+    daylight:
+      fc: *white
+      ec: *daylight
+      hatch: "oo"
+    twilight:
+      fc: *white
+      ec: *twilight
+      hatch: "oo"
+    nightlight:
+      fc: *white
+      ec: *nightlight
+      hatch: ""
+
+display:
+  grid_alpha: 0.35
+  fills:
+    daylight:
+      color: *daylight
+    twilight:
+      color: *twilight
+    nightlight:
+      color: *nightlight

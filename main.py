@@ -25,31 +25,12 @@ SECONDS_IN_A_MINUTE = 60
 SECONDS_IN_A_HOUR = SECONDS_IN_A_MINUTE * 60
 SECONDS_IN_A_DAY = SECONDS_IN_A_HOUR * 24
 
-WHITE = "white"
-DAYLIGHT = "#ffe577"
-SUNLIGHT = "#ef4745"
-TWILIGHT = "#6279b8"
-NIGHTLIGHT = "#4a6194"
-
-DAY_HATCH = "OO"
-TWI_HATCH = "oo"
-NIGHT_HATCH = ""
-
-PRINT = True
-if PRINT:
-    GRID_ALPHA = 0.85
-    DAY_FILL = dict(fc=WHITE, ec=DAYLIGHT, hatch=DAY_HATCH)
-    TWI_FILL = dict(fc=WHITE, ec=TWILIGHT, hatch=TWI_HATCH)
-    NIGHT_FILL = dict(fc=WHITE, ec=NIGHTLIGHT, hatch=NIGHT_HATCH)
-else:
-    GRID_ALPHA = 0.35
-    DAY_FILL = dict(color=DAYLIGHT)
-    TWI_FILL = dict(color=TWILIGHT)
-    NIGHT_FILL = dict(color=NIGHTLIGHT)
-
 ISO_DATE_FORMAT = "%Y-%m-%d"
 A4_INCHES = (11.69, 8.27)
 DPI = 300
+
+with open("config.yaml") as f:
+    cfg = Munch.fromDict(yaml.load(f, Loader=yaml.FullLoader))
 
 with open("locations.yaml") as f:
     locs = Munch.fromDict(yaml.load(f, Loader=yaml.FullLoader))
@@ -136,25 +117,33 @@ def _hour_formatter(seconds_in, _position):
     return f"{hours:02d}h{minutes:02d}"
 
 
-def plot_sun_times(location, df, start_date, end_date, df_highlights=None):
+def plot_sun_times(location, df, start_date, end_date, media="display", df_highlights=None):
     fig, ax = plt.subplots(figsize=A4_INCHES, dpi=DPI)
 
-    plt.fill_between(df.date, 0, df.dawn, **NIGHT_FILL)
-    plt.plot(df.date, df.dawn, lw=1, color=TWILIGHT)
-    plt.fill_between(df.date, df.dawn, df.sunrise, **TWI_FILL)
-    plt.plot(df.date, df.sunrise, lw=2, color=SUNLIGHT)
-    plt.fill_between(df.date, df.sunrise, df.sunset, **DAY_FILL)
-    plt.plot(df.date, df.sunset, lw=2, color=SUNLIGHT)
-    plt.fill_between(df.date, df.sunset, df.dusk, **TWI_FILL)
-    plt.plot(df.date, df.dusk, lw=1, color=TWILIGHT)
-    plt.fill_between(df.date, df.dusk, SECONDS_IN_A_DAY, **NIGHT_FILL)
+    plt.fill_between(df.date, 0, df.dawn, **cfg[media].fills.nightlight)
+    plt.plot(df.date, df.dawn, lw=1, color=cfg.colours.twilight)
+    plt.fill_between(df.date, df.dawn, df.sunrise, **cfg[media].fills.twilight)
+    plt.plot(df.date, df.sunrise, lw=2, color=cfg.colours.sunlight)
+    plt.fill_between(df.date, df.sunrise, df.sunset, **cfg[media].fills.daylight)
+    plt.plot(df.date, df.sunset, lw=2, color=cfg.colours.sunlight)
+    plt.fill_between(df.date, df.sunset, df.dusk, **cfg[media].fills.twilight)
+    plt.plot(df.date, df.dusk, lw=1, color=cfg.colours.twilight)
+    plt.fill_between(df.date, df.dusk, SECONDS_IN_A_DAY, **cfg[media].fills.nightlight)
 
     if df_highlights is not None:
         plt.plot(
-            df_highlights.date, df_highlights.sunrise, linestyle="None", marker="o", color=SUNLIGHT
+            df_highlights.date,
+            df_highlights.sunrise,
+            linestyle="None",
+            marker="o",
+            color=cfg.colours.sunlight,
         )
         plt.plot(
-            df_highlights.date, df_highlights.sunset, linestyle="None", marker="o", color=SUNLIGHT
+            df_highlights.date,
+            df_highlights.sunset,
+            linestyle="None",
+            marker="o",
+            color=cfg.colours.sunlight,
         )
         for _idx, row in df_highlights.iterrows():
             ax.annotate(
@@ -164,7 +153,7 @@ def plot_sun_times(location, df, start_date, end_date, df_highlights=None):
                 textcoords="offset points",
                 ha="center",
                 va="center",
-                color=SUNLIGHT,
+                color=cfg.colours.sunlight,
             )
             ax.annotate(
                 _hour_formatter(row.sunset, None),
@@ -173,7 +162,7 @@ def plot_sun_times(location, df, start_date, end_date, df_highlights=None):
                 textcoords="offset points",
                 ha="center",
                 va="center",
-                color=SUNLIGHT,
+                color=cfg.colours.sunlight,
             )
 
     plt.xlim(start_date, end_date)
@@ -189,14 +178,16 @@ def plot_sun_times(location, df, start_date, end_date, df_highlights=None):
     ax.yaxis.set_minor_locator(ticker.FixedLocator(hourly))
     ax.yaxis.set_major_formatter(ticker.FuncFormatter(_hour_formatter))
 
-    plt.grid(True, "minor", "both", zorder=1000, alpha=GRID_ALPHA, c="0.8")
-    plt.grid(True, "major", "both", zorder=1001, alpha=GRID_ALPHA, c="0.5")
+    plt.grid(True, "minor", "both", zorder=1000, alpha=cfg[media].grid_alpha, c="0.8")
+    plt.grid(True, "major", "both", zorder=1001, alpha=cfg[media].grid_alpha, c="0.5")
 
-    nighttime = mpatches.Patch(**NIGHT_FILL, label="Darkness")
-    twilight = mpatches.Patch(**TWI_FILL, label="Civil Twilight")
-    daytime = mpatches.Patch(**DAY_FILL, label="Daylight")
-    sunrise_sunset = Line2D([0], [0], color=SUNLIGHT, label="Sunrise/Sunset")
-    solstice_equinox = Line2D([0], [0], color=SUNLIGHT, marker="o", label="Solstice/Equinox")
+    nighttime = mpatches.Patch(**cfg[media].fills.nightlight, label="Darkness")
+    twilight = mpatches.Patch(**cfg[media].fills.twilight, label="Civil Twilight")
+    daytime = mpatches.Patch(**cfg[media].fills.daylight, label="Daylight")
+    sunrise_sunset = Line2D([0], [0], color=cfg.colours.sunlight, label="Sunrise/Sunset")
+    solstice_equinox = Line2D(
+        [0], [0], color=cfg.colours.sunlight, marker="o", label="Solstice/Equinox"
+    )
     handles = [nighttime, twilight, daytime, solstice_equinox, sunrise_sunset]
     fig.legend(handles=handles, loc="center", bbox_to_anchor=(0.5, 0.925), ncol=len(handles))
 
@@ -207,8 +198,13 @@ def plot_sun_times(location, df, start_date, end_date, df_highlights=None):
     plt.tight_layout()
 
     location_name = _clean_name(location.name)
-    plt.savefig(p / "tmp" / f"sun-graph_{location_name}.png")
-    plt.savefig(p / "tmp" / f"sun-graph_{location_name}.pdf")
+    match media:
+        case "display":
+            plt.savefig(p / "tmp" / f"sun-graph_{location_name}.png")
+        case "print":
+            plt.savefig(p / "tmp" / f"sun-graph_{location_name}.pdf")
+        case _:
+            pass
     plt.close()
 
 
@@ -239,7 +235,8 @@ def main(location_name, recalculate):
             ]
         )
     ]
-    plot_sun_times(location, df, START_DATE, END_DATE, df_highlights)
+    plot_sun_times(location, df, START_DATE, END_DATE, "display", df_highlights)
+    plot_sun_times(location, df, START_DATE, END_DATE, "print", df_highlights)
 
 
 if __name__ == "__main__":
