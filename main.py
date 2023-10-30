@@ -18,8 +18,8 @@ from munch import Munch
 from pytz import timezone
 from tqdm import tqdm
 
-START_DATE = datetime(2023, 10, 30)
-END_DATE = datetime(2024, 10, 27)
+START_DATE = datetime(2023, 11, 1)
+END_DATE = datetime(2024, 11, 1)
 
 SECONDS_IN_A_MINUTE = 60
 SECONDS_IN_A_HOUR = SECONDS_IN_A_MINUTE * 60
@@ -181,7 +181,7 @@ def plot_sun_times(location, df, start_date, end_date, df_highlights=None):
 
     ax.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
     ax.xaxis.set_minor_locator(mdates.MonthLocator())
-    ax.xaxis.set_major_formatter(mdates.DateFormatter("%d %b '%y"))
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("1 %b '%y"))
 
     hourly = np.linspace(0, SECONDS_IN_A_DAY, 24 + 1)
     two_hourly = np.linspace(0, SECONDS_IN_A_DAY, 12 + 1)
