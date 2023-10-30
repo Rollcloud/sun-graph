@@ -208,6 +208,7 @@ def plot_sun_times(location, df, start_date, end_date, df_highlights=None):
 
     location_name = _clean_name(location.name)
     plt.savefig(p / "tmp" / f"sun-graph_{location_name}.png")
+    plt.savefig(p / "tmp" / f"sun-graph_{location_name}.pdf")
     plt.close()
 
 
