@@ -224,19 +224,13 @@ def main(location_name, recalculate):
     )
 
     df = sun_times(location, START_DATE, END_DATE, recalculate=recalculate)
-    df_highlights = df[["date", "sunrise", "sunset"]][
-        df.date.dt.strftime(ISO_DATE_FORMAT).isin(
-            [
-                "2023-12-22",
-                "2024-03-20",
-                "2024-06-20",
-                "2024-09-22",
-                "2024-12-21",
-            ]
-        )
-    ]
-    plot_sun_times(location, df, START_DATE, END_DATE, "display", df_highlights)
-    plot_sun_times(location, df, START_DATE, END_DATE, "print", df_highlights)
+
+    events = [str(event) for event in cfg.events]
+    df_events = df[["date", "sunrise", "sunset"]]
+    df_events = df_events[df.date.dt.strftime(ISO_DATE_FORMAT).isin(events)]
+
+    plot_sun_times(location, df, START_DATE, END_DATE, "display", df_events)
+    plot_sun_times(location, df, START_DATE, END_DATE, "print", df_events)
 
 
 if __name__ == "__main__":

@@ -37,3 +37,11 @@ display:
       color: *twilight
     nightlight:
       color: *nightlight
+
+# dates to highlight the sunrises and sunsets of on the graph
+events:
+  - 2023-12-22
+  - 2024-03-20
+  - 2024-06-20
+  - 2024-09-22
+  - 2024-12-21
