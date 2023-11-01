@@ -4,6 +4,7 @@ define: &daylight "#ffe577"
 define: &sunlight "#ef4745"
 define: &twilight "#6279b8"
 define: &nightlight "#4a6194"
+define: &charcoal '#444'
 
 colours:
   white: *white
@@ -11,6 +12,7 @@ colours:
   sunlight: *sunlight
   twilight: *twilight
   nightlight: *nightlight
+  charcoal: *charcoal
 
 print:
   grid_alpha: 0.85
@@ -27,6 +29,10 @@ print:
       fc: *white
       ec: *nightlight
       hatch: ""
+  contrast:
+    daylight: *sunlight
+    twilight: *charcoal
+    nightlight: *charcoal
 
 display:
   grid_alpha: 0.35
@@ -37,6 +43,11 @@ display:
       color: *twilight
     nightlight:
       color: *nightlight
+  contrast:
+    daylight: *sunlight
+    twilight: *white
+    nightlight: *white
+
 
 # dates to highlight the sunrises and sunsets of on the graph
 events:
