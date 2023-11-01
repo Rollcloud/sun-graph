@@ -1,3 +1,11 @@
+# Calculate and graph various sunrise parameters.
+#
+# Note 1:
+#
+# The USNO definition for sunset/sunrise is when the center of the sun is 0.8333 degrees below the horizon
+# this is an approximation that takes into account the sun's average radius and an average amount of atmospheric refraction.
+# See https://github.com/astropy/astroplan/issues/409#issuecomment-554570085
+
 import re
 from datetime import datetime
 from pathlib import Path
@@ -48,15 +56,15 @@ def get_sun_times(location: Observer, start_date, end_date, tz=None):
     times = []
     year_of_days = pd.date_range(start_date, end_date, inclusive="both", tz=tz)
     for day in tqdm(year_of_days):
-        sunrise = location.sun_rise_time(Time(day), "next")
+        sunrise = location.sun_rise_time(Time(day), "next", horizon=-0.8333 * u.deg)  # see Note 1
         local_sunrise = sunrise.to_datetime(timezone=tz)
         time_of_sunrise = (local_sunrise - day).total_seconds()
 
-        sunset = location.sun_set_time(Time(day), "next")
         noon = location.noon(Time(day), "next")
         local_noon = noon.to_datetime(timezone=tz)
         time_of_noon = (local_noon - day).total_seconds()
 
+        sunset = location.sun_set_time(Time(day), "next", horizon=-0.8333 * u.deg)  # see Note 1
         local_sunset = sunset.to_datetime(timezone=tz)
         time_of_sunset = (local_sunset - day).total_seconds()
 
@@ -316,6 +324,7 @@ def main(location_name, recalculate):
         elevation=loc_data.elevation_m * u.m,
         name=loc_data.name,
         timezone=timezone(loc_data.timezone),
+        pressure=0 * u.mbar,  # see Note 1
     )
 
     df = sun_times(location, START_DATE, END_DATE, recalculate=recalculate)
