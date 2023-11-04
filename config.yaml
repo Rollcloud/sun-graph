@@ -1,15 +1,19 @@
 ---
 define: &white 'white'
-define: &daylight "#ffe577"
-define: &sunlight "#ef4745"
+define: &pink "#ff0f7b"
+define: &pink_orange "#ef4745"
+define: &orange "#ff6f00"
+define: &yellow "#ffe577"
 define: &twilight "#6279b8"
 define: &nightlight "#4a6194"
 define: &charcoal '#444'
 
 colours:
   white: *white
-  daylight: *daylight
-  sunlight: *sunlight
+  sunrise: *pink
+  sunlight: *pink_orange
+  sunset: *orange
+  daylight: *yellow
   twilight: *twilight
   nightlight: *nightlight
   charcoal: *charcoal
@@ -19,7 +23,7 @@ print:
   fills:
     daylight:
       fc: *white
-      ec: *daylight
+      ec: *yellow
       hatch: "oo"
     twilight:
       fc: *white
@@ -30,7 +34,7 @@ print:
       ec: *nightlight
       hatch: ""
   contrast:
-    daylight: *sunlight
+    daylight: *pink_orange
     twilight: *charcoal
     nightlight: *charcoal
 
@@ -38,13 +42,13 @@ display:
   grid_alpha: 0.35
   fills:
     daylight:
-      color: *daylight
+      color: *yellow
     twilight:
       color: *twilight
     nightlight:
       color: *nightlight
   contrast:
-    daylight: *sunlight
+    daylight: *pink_orange
     twilight: *white
     nightlight: *white
 

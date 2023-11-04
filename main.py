@@ -139,166 +139,176 @@ def _delta_time_formatter(seconds_in, _position):
     return f"{sign}{minutes:d}m{seconds:02d}s"
 
 
-def plot_sun_times(
-    location, df, start_date, end_date, media="display", df_highlights=None, roc=False
-):
-    fig, ax = plt.subplots(figsize=A4_INCHES, dpi=DPI)
+def plot_sun_times(location, df, df_events, start_date, end_date, media="display"):
+    gs_kw = dict(width_ratios=[1], height_ratios=[3, 1])
+    fig, axd = plt.subplot_mosaic(
+        [["upper"], ["lower"]], gridspec_kw=gs_kw, figsize=A4_INCHES, dpi=DPI, layout="tight"
+    )
+    ax_t = axd["upper"]
+    ax_dt = axd["lower"]
 
-    plt.fill_between(df.date, 0, df.dawn, **cfg[media].fills.nightlight)
-    plt.plot(df.date, df.dawn, lw=1, color=cfg.colours.twilight)
-    plt.fill_between(df.date, df.dawn, df.sunrise, **cfg[media].fills.twilight)
-    plt.plot(df.date, df.sunrise, lw=2, color=cfg.colours.sunlight)
-    plt.fill_between(df.date, df.sunrise, df.sunset, **cfg[media].fills.daylight)
-    plt.plot(df.date, df.noon, lw=1, color=cfg.colours.sunlight)
-    plt.plot(df.date, df.sunset, lw=2, color=cfg.colours.sunlight)
-    plt.fill_between(df.date, df.sunset, df.dusk, **cfg[media].fills.twilight)
-    plt.plot(df.date, df.dusk, lw=1, color=cfg.colours.twilight)
-    plt.fill_between(df.date, df.dusk, SECONDS_IN_A_DAY, **cfg[media].fills.nightlight)
+    ax_t.fill_between(df.date, 0, df.dawn, **cfg[media].fills.nightlight)
+    ax_t.plot(df.date, df.dawn, lw=1, color=cfg.colours.twilight)
+    ax_t.fill_between(df.date, df.dawn, df.sunrise, **cfg[media].fills.twilight)
+    ax_t.plot(df.date, df.sunrise, lw=2, color=cfg.colours.sunrise)
+    ax_t.fill_between(df.date, df.sunrise, df.sunset, **cfg[media].fills.daylight)
+    ax_t.plot(df.date, df.noon, lw=2, color=cfg.colours.sunlight)
+    ax_t.plot(df.date, df.sunset, lw=2, color=cfg.colours.sunset)
+    ax_t.fill_between(df.date, df.sunset, df.dusk, **cfg[media].fills.twilight)
+    ax_t.plot(df.date, df.dusk, lw=1, color=cfg.colours.twilight)
+    ax_t.fill_between(df.date, df.dusk, SECONDS_IN_A_DAY, **cfg[media].fills.nightlight)
 
-    if df_highlights is not None:
-        plt.plot(
-            df_highlights.date,
-            df_highlights.sunrise,
-            linestyle="None",
-            marker="o",
+    ax_t.plot(
+        df_events.date, df_events.sunrise, linestyle="None", marker="o", color=cfg.colours.sunrise
+    )
+    ax_t.plot(
+        df_events.date, df_events.noon, linestyle="None", marker="o", color=cfg.colours.sunlight
+    )
+    ax_t.plot(
+        df_events.date, df_events.sunset, linestyle="None", marker="o", color=cfg.colours.sunset
+    )
+    for _idx, row in df_events.iterrows():
+        ax_t.annotate(
+            _time_formatter(row.sunrise, None),
+            (row.date, row.sunrise),
+            xytext=(0, 10),
+            textcoords="offset points",
+            ha="center",
+            va="center",
+            color=cfg.colours.sunrise,
+        )
+        ax_t.annotate(
+            _time_formatter(row.noon, None),
+            (row.date, row.noon),
+            xytext=(0, -10),
+            textcoords="offset points",
+            ha="center",
+            va="center",
             color=cfg.colours.sunlight,
         )
-        plt.plot(
-            df_highlights.date,
-            df_highlights.noon,
-            linestyle="None",
-            marker="o",
-            color=cfg.colours.sunlight,
+        ax_t.annotate(
+            _time_formatter(row.sunset, None),
+            (row.date, row.sunset),
+            xytext=(0, -10),
+            textcoords="offset points",
+            ha="center",
+            va="center",
+            color=cfg.colours.sunset,
         )
-        plt.plot(
-            df_highlights.date,
-            df_highlights.sunset,
-            linestyle="None",
-            marker="o",
-            color=cfg.colours.sunlight,
+
+    sunrise_delta = df.sunrise.diff()
+    sunrise_delta[sunrise_delta.abs() > 30 * SECONDS_IN_A_MINUTE] = pd.NA
+    sunset_delta = df.sunset.diff()
+    sunset_delta[sunset_delta.abs() > 30 * SECONDS_IN_A_MINUTE] = pd.NA
+
+    ax_dt.plot(df.date, sunrise_delta, color=cfg.colours.sunrise, linestyle="dotted", lw=2)
+    ax_dt.plot(df.date, sunset_delta, color=cfg.colours.sunset, linestyle="dashed")
+
+    df_events["sunrise_delta"] = sunrise_delta.loc[df_events.index]
+    df_events["sunset_delta"] = sunset_delta.loc[df_events.index]
+
+    ax_dt.plot(
+        df_events.date,
+        df_events.sunrise_delta,
+        linestyle="None",
+        marker="o",
+        color=cfg.colours.sunrise,
+    )
+    ax_dt.plot(
+        df_events.date,
+        df_events.sunset_delta,
+        linestyle="None",
+        marker="o",
+        color=cfg.colours.sunset,
+    )
+
+    for _idx, row in df_events.iterrows():
+        annotation_direction_sunrise = np.sign(row.sunrise_delta)
+        annotation_direction_sunset = np.sign(row.sunset_delta)
+        # if values are within a minute of each other, flip sign of one annotation
+        if abs(row.sunrise_delta - row.sunset_delta) < SECONDS_IN_A_MINUTE:
+            annotation_direction_sunrise *= -1
+        ax_dt.annotate(
+            _delta_time_formatter(row.sunrise_delta, None),
+            (row.date, row.sunrise_delta),
+            xytext=(0, -16 * annotation_direction_sunrise),
+            textcoords="offset points",
+            ha="center",
+            va="center",
+            color=cfg.colours.sunrise,
         )
-        for _idx, row in df_highlights.iterrows():
-            ax.annotate(
-                _time_formatter(row.sunrise, None),
-                (row.date, row.sunrise),
-                xytext=(0, 10),
-                textcoords="offset points",
-                ha="center",
-                va="center",
-                color=cfg.colours.sunlight,
-            )
-            ax.annotate(
-                _time_formatter(row.noon, None),
-                (row.date, row.noon),
-                xytext=(0, -10),
-                textcoords="offset points",
-                ha="center",
-                va="center",
-                color=cfg.colours.sunlight,
-            )
-            ax.annotate(
-                _time_formatter(row.sunset, None),
-                (row.date, row.sunset),
-                xytext=(0, -10),
-                textcoords="offset points",
-                ha="center",
-                va="center",
-                color=cfg.colours.sunlight,
-            )
-
-    if roc:
-        sunrise_roc = df.sunrise.diff()
-        sunrise_roc[sunrise_roc.abs() > 30 * SECONDS_IN_A_MINUTE] = pd.NA
-        sunrise_roc_plot = sunrise_roc.abs() * 60
-        sunset_roc = df.sunset.diff()
-        sunset_roc[sunset_roc.abs() > 30 * SECONDS_IN_A_MINUTE] = pd.NA
-        sunset_roc_plot = SECONDS_IN_A_DAY - sunset_roc.abs() * 60
-
-        plt.plot(
-            df.date, sunrise_roc_plot, color=cfg[media].contrast.nightlight, linestyle="dashed"
+        ax_dt.annotate(
+            _delta_time_formatter(row.sunset_delta, None),
+            (row.date, row.sunset_delta),
+            xytext=(0, -16 * annotation_direction_sunset),
+            textcoords="offset points",
+            ha="center",
+            va="center",
+            color=cfg.colours.sunset,
         )
-        plt.plot(df.date, sunset_roc_plot, color=cfg[media].contrast.nightlight, linestyle="dashed")
 
-        if df_highlights is not None:
-            df_highlights["sunrise_roc"] = sunrise_roc.loc[df_highlights.index]
-            df_highlights["sunrise_roc_plot"] = sunrise_roc_plot.loc[df_highlights.index]
-            df_highlights["sunset_roc"] = sunset_roc.loc[df_highlights.index]
-            df_highlights["sunset_roc_plot"] = sunset_roc_plot.loc[df_highlights.index]
+    ax_t.set_xlim(start_date, end_date)
+    ax_t.set_ylim(0, SECONDS_IN_A_DAY)
 
-            plt.plot(
-                df_highlights.date,
-                df_highlights.sunrise_roc_plot,
-                linestyle="None",
-                marker="o",
-                color=cfg[media].contrast.nightlight,
-            )
-            plt.plot(
-                df_highlights.date,
-                df_highlights.sunset_roc_plot,
-                linestyle="None",
-                marker="o",
-                color=cfg[media].contrast.nightlight,
-            )
+    ax_dt.set_xlim(start_date, end_date)
+    # make y-axis limits symmetrical
+    low, high = ax_dt.get_ylim()
+    bound = max(abs(low), abs(high))
+    ax_dt.set_ylim(-bound, bound)
 
-            for _idx, row in df_highlights.iterrows():
-                ax.annotate(
-                    _delta_time_formatter(row.sunrise_roc, None),
-                    (row.date, row.sunrise_roc_plot),
-                    xytext=(0, 15),
-                    textcoords="offset points",
-                    ha="center",
-                    va="center",
-                    color=cfg[media].contrast.nightlight,
-                )
-                ax.annotate(
-                    _delta_time_formatter(row.sunset_roc, None),
-                    (row.date, row.sunset_roc_plot),
-                    xytext=(0, -15),
-                    textcoords="offset points",
-                    ha="center",
-                    va="center",
-                    color=cfg[media].contrast.nightlight,
-                )
+    ax_t.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
+    ax_t.xaxis.set_minor_locator(mdates.MonthLocator())
+    ax_t.xaxis.set_major_formatter(mdates.DateFormatter("1 %b '%y"))
 
-    plt.xlim(start_date, end_date)
-    plt.ylim(0, SECONDS_IN_A_DAY)
+    ax_dt.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
+    ax_dt.xaxis.set_minor_locator(mdates.MonthLocator())
+    ax_dt.xaxis.set_major_formatter(mdates.DateFormatter("1 %b '%y"))
 
-    ax.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
-    ax.xaxis.set_minor_locator(mdates.MonthLocator())
-    ax.xaxis.set_major_formatter(mdates.DateFormatter("1 %b '%y"))
-
+    minutely = SECONDS_IN_A_MINUTE
     hourly = np.linspace(0, SECONDS_IN_A_DAY, 24 + 1)
     two_hourly = np.linspace(0, SECONDS_IN_A_DAY, 12 + 1)
-    ax.yaxis.set_major_locator(ticker.FixedLocator(two_hourly))
-    ax.yaxis.set_minor_locator(ticker.FixedLocator(hourly))
-    ax.yaxis.set_major_formatter(ticker.FuncFormatter(_time_formatter))
+    ax_t.yaxis.set_major_locator(ticker.FixedLocator(two_hourly))
+    ax_t.yaxis.set_minor_locator(ticker.FixedLocator(hourly))
+    ax_t.yaxis.set_major_formatter(ticker.FuncFormatter(_time_formatter))
 
-    plt.grid(True, "minor", "both", zorder=1000, alpha=cfg[media].grid_alpha, c="0.8")
-    plt.grid(True, "major", "both", zorder=1001, alpha=cfg[media].grid_alpha, c="0.5")
+    ax_dt.yaxis.set_major_locator(ticker.MultipleLocator(minutely))
+    ax_dt.yaxis.set_major_formatter(ticker.FuncFormatter(_delta_time_formatter))
+
+    ax_t.grid(True, "minor", "both", zorder=1000, alpha=cfg[media].grid_alpha, c="0.8")
+    ax_t.grid(True, "major", "both", zorder=1001, alpha=cfg[media].grid_alpha, c="0.5")
+
+    ax_dt.grid(True, "minor", "both", zorder=1000, alpha=cfg[media].grid_alpha, c="0.8")
+    ax_dt.grid(True, "major", "both", zorder=1001, alpha=cfg[media].grid_alpha, c="0.5")
 
     nighttime = mpatches.Patch(**cfg[media].fills.nightlight, label="Darkness")
     twilight = mpatches.Patch(**cfg[media].fills.twilight, label="Civil Twilight")
     daytime = mpatches.Patch(**cfg[media].fills.daylight, label="Daylight")
-    sunrise_sunset = Line2D([0], [0], color=cfg.colours.sunlight, label="Sunrise/Sunset")
+    sunrise = Line2D([0], [0], color=cfg.colours.sunrise, label="Sunrise")
+    sunset = Line2D([0], [0], color=cfg.colours.sunset, label="Sunset")
     solstice_equinox = Line2D(
-        [0], [0], color=cfg.colours.sunlight, marker="o", label="Solstice/Equinox"
+        [0], [0], color=cfg.colours.sunlight, marker="o", linestyle="none", label="Solstice/Equinox"
     )
-    noon = Line2D([0], [0], color=cfg.colours.sunlight, lw=1, label="Solar Noon")
-    rate_of_change = Line2D(
-        [0],
-        [0],
-        color=cfg[media].contrast.nightlight,
-        linestyle="-",
-        label="Rate of Change of Sunrise/Sunset",
+    noon = Line2D([0], [0], color=cfg.colours.sunlight, label="Solar Noon")
+    change_sunrise = Line2D(
+        [0], [0], color=cfg.colours.sunrise, linestyle="dotted", label="Change Sunrise", lw=2
     )
-    handles = [nighttime, twilight, daytime, solstice_equinox, sunrise_sunset, noon, rate_of_change]
-    fig.legend(handles=handles, loc="center", bbox_to_anchor=(0.5, 0.925), ncol=len(handles))
+    change_sunset = Line2D(
+        [0], [0], color=cfg.colours.sunset, linestyle="dashed", label="Change Sunset"
+    )
+    upper_handles = [nighttime, twilight, daytime, solstice_equinox, sunrise, noon, sunset]
+    lower_handles = [solstice_equinox, change_sunrise, change_sunset]
+    ax_t.legend(
+        handles=upper_handles, loc="center", bbox_to_anchor=(0.5, 1.05), ncol=len(upper_handles)
+    )
+    ax_dt.legend(
+        handles=lower_handles, loc="center", bbox_to_anchor=(0.5, 1.10), ncol=len(lower_handles)
+    )
 
-    plt.xlabel("Date")
-    plt.ylabel("Local Time")
-    plt.title(f"Sun Graph - {location.name}", size=18, y=1.07)
-
-    plt.tight_layout()
+    ax_t.set_xlabel("Date")
+    ax_t.set_ylabel("Local Time")
+    ax_dt.set_xlabel("Date")
+    ax_dt.set_ylabel("ΔTime")
+    plt.suptitle(f"Sun Graph - {location.name}", size=18)
 
     location_name = _clean_name(location.name)
     match media:
@@ -333,8 +343,8 @@ def main(location_name, recalculate):
     df_events = df[["date", "sunrise", "noon", "sunset"]]
     df_events = df_events[df.date.dt.strftime(ISO_DATE_FORMAT).isin(events)]
 
-    plot_sun_times(location, df, START_DATE, END_DATE, "display", df_events, roc=True)
-    plot_sun_times(location, df, START_DATE, END_DATE, "print", df_events, roc=True)
+    plot_sun_times(location, df, df_events, START_DATE, END_DATE, "display")
+    plot_sun_times(location, df, df_events, START_DATE, END_DATE, "print")
 
 
 if __name__ == "__main__":
