@@ -52,27 +52,27 @@ class DataInvalidError(Exception):
     pass
 
 
-def get_sun_times(location: Observer, start_date, end_date, tz=None):
+def get_sun_times(observer: Observer, start_date, end_date, tz=None):
     times = []
     year_of_days = pd.date_range(start_date, end_date, inclusive="both", tz=tz)
     for day in tqdm(year_of_days):
-        sunrise = location.sun_rise_time(Time(day), "next", horizon=-0.8333 * u.deg)  # see Note 1
+        sunrise = observer.sun_rise_time(Time(day), "next", horizon=-0.8333 * u.deg)  # see Note 1
         local_sunrise = sunrise.to_datetime(timezone=tz)
         time_of_sunrise = (local_sunrise - day).total_seconds()
 
-        noon = location.noon(Time(day), "next")
+        noon = observer.noon(Time(day), "next")
         local_noon = noon.to_datetime(timezone=tz)
         time_of_noon = (local_noon - day).total_seconds()
 
-        sunset = location.sun_set_time(Time(day), "next", horizon=-0.8333 * u.deg)  # see Note 1
+        sunset = observer.sun_set_time(Time(day), "next", horizon=-0.8333 * u.deg)  # see Note 1
         local_sunset = sunset.to_datetime(timezone=tz)
         time_of_sunset = (local_sunset - day).total_seconds()
 
-        dawn = location.twilight_morning_civil(Time(day), "next")
+        dawn = observer.twilight_morning_civil(Time(day), "next")
         local_dawn = dawn.to_datetime(timezone=tz)
         time_of_dawn = (local_dawn - day).total_seconds()
 
-        dusk = location.twilight_evening_civil(Time(day), "next")
+        dusk = observer.twilight_evening_civil(Time(day), "next")
         local_dusk = dusk.to_datetime(timezone=tz)
         time_of_dusk = (local_dusk - day).total_seconds()
 
@@ -90,13 +90,13 @@ def get_sun_times(location: Observer, start_date, end_date, tz=None):
     return pd.DataFrame(times)
 
 
-def sun_times(location: Observer, start_date, end_date, recalculate=False):
+def sun_times(observer: Observer, start_date, end_date, recalculate=False):
     filename = "_".join(
         [
-            location.name,
+            observer.name,
             start_date.strftime(ISO_DATE_FORMAT),
             end_date.strftime(ISO_DATE_FORMAT),
-            str(location.timezone),
+            str(observer.timezone),
         ]
     )
     filename = _clean_name(filename)
@@ -107,7 +107,7 @@ def sun_times(location: Observer, start_date, end_date, recalculate=False):
             raise DataInvalidError("Recalculate requested.")
         return pd.read_pickle(filepath)
     except (DataInvalidError, FileNotFoundError):
-        df = get_sun_times(location, START_DATE, END_DATE, tz=location.timezone)
+        df = get_sun_times(observer, START_DATE, END_DATE, tz=observer.timezone)
         df.to_pickle(filepath)
         return df
 
@@ -151,7 +151,7 @@ def _label_value(axis, x, y, formatter, colour_name, vertical_offset):
     )
 
 
-def plot_sun_times(location, df, df_events, start_date, end_date, media="display"):
+def plot_sun_times(observer, df, df_events, start_date, end_date, media="display"):
     gs_kw = dict(width_ratios=[1], height_ratios=[3, 1])
     fig, axd = plt.subplot_mosaic(
         [["upper"], ["lower"]], gridspec_kw=gs_kw, figsize=A4_INCHES, dpi=DPI, layout="tight"
@@ -285,27 +285,27 @@ def plot_sun_times(location, df, df_events, start_date, end_date, media="display
     ax_t.set_ylabel("Local Time")
     ax_dt.set_xlabel("Date")
     ax_dt.set_ylabel("ΔTime")
-    plt.suptitle(f"Sun Graph - {location.name}", size=18)
+    plt.suptitle(f"Sun Graph - {observer.name}", size=18)
 
-    location_name = _clean_name(location.name)
+    observer_name = _clean_name(observer.name)
     match media:
         case "display":
-            plt.savefig(p / "tmp" / f"sun-graph_{location_name}.png")
+            plt.savefig(p / "tmp" / f"sun-graph_{observer_name}.png")
         case "print":
-            plt.savefig(p / "tmp" / f"sun-graph_{location_name}.pdf")
+            plt.savefig(p / "tmp" / f"sun-graph_{observer_name}.pdf")
         case _:
             pass
     plt.close()
 
 
 @click.command()
-@click.argument("location_name")
+@click.argument("observer_name")
 @click.option("-r", "--recalculate", is_flag=True, help="Recalculate sunrise and sunset times.")
-def main(location_name, recalculate):
-    """Generate sun graphs for LOCATION_NAME."""
+def main(observer_name, recalculate):
+    """Generate sun graphs for observer_NAME."""
 
-    loc_data = locs[location_name]
-    location = Observer(
+    loc_data = locs[observer_name]
+    observer = Observer(
         longitude=loc_data.longitude_deg * u.deg,
         latitude=loc_data.latitude_deg * u.deg,
         elevation=loc_data.elevation_m * u.m,
@@ -314,14 +314,14 @@ def main(location_name, recalculate):
         pressure=0 * u.mbar,  # see Note 1
     )
 
-    df = sun_times(location, START_DATE, END_DATE, recalculate=recalculate)
+    df = sun_times(observer, START_DATE, END_DATE, recalculate=recalculate)
 
     events = [str(event) for event in cfg.events]
     df_events = df[["date", "sunrise", "noon", "sunset"]]
     df_events = df_events[df.date.dt.strftime(ISO_DATE_FORMAT).isin(events)]
 
-    plot_sun_times(location, df, df_events, START_DATE, END_DATE, "display")
-    plot_sun_times(location, df, df_events, START_DATE, END_DATE, "print")
+    plot_sun_times(observer, df, df_events, START_DATE, END_DATE, "display")
+    plot_sun_times(observer, df, df_events, START_DATE, END_DATE, "print")
 
 
 if __name__ == "__main__":
