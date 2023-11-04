@@ -323,7 +323,7 @@ def plot_sun_times(location, df, df_events, start_date, end_date, media="display
 
 @click.command()
 @click.argument("location_name")
-@click.option("--recalculate", is_flag=True, help="Recalculate sunrise and sunset times.")
+@click.option("-r", "--recalculate", is_flag=True, help="Recalculate sunrise and sunset times.")
 def main(location_name, recalculate):
     """Generate sun graphs for LOCATION_NAME."""
 
