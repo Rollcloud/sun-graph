@@ -139,6 +139,18 @@ def _delta_time_formatter(seconds_in, _position):
     return f"{sign}{minutes:d}m{seconds:02d}s"
 
 
+def _label_value(axis, x, y, formatter, colour_name, vertical_offset):
+    axis.annotate(
+        formatter(y, None),
+        (x, y),
+        xytext=(0, vertical_offset),
+        textcoords="offset points",
+        ha="center",
+        va="center",
+        color=cfg.colours[colour_name],
+    )
+
+
 def plot_sun_times(location, df, df_events, start_date, end_date, media="display"):
     gs_kw = dict(width_ratios=[1], height_ratios=[3, 1])
     fig, axd = plt.subplot_mosaic(
@@ -168,33 +180,9 @@ def plot_sun_times(location, df, df_events, start_date, end_date, media="display
         df_events.date, df_events.sunset, linestyle="None", marker="o", color=cfg.colours.sunset
     )
     for _idx, row in df_events.iterrows():
-        ax_t.annotate(
-            _time_formatter(row.sunrise, None),
-            (row.date, row.sunrise),
-            xytext=(0, 10),
-            textcoords="offset points",
-            ha="center",
-            va="center",
-            color=cfg.colours.sunrise,
-        )
-        ax_t.annotate(
-            _time_formatter(row.noon, None),
-            (row.date, row.noon),
-            xytext=(0, -10),
-            textcoords="offset points",
-            ha="center",
-            va="center",
-            color=cfg.colours.sunlight,
-        )
-        ax_t.annotate(
-            _time_formatter(row.sunset, None),
-            (row.date, row.sunset),
-            xytext=(0, -10),
-            textcoords="offset points",
-            ha="center",
-            va="center",
-            color=cfg.colours.sunset,
-        )
+        _label_value(ax_t, row.date, row.sunrise, _time_formatter, "sunrise", 10)
+        _label_value(ax_t, row.date, row.noon, _time_formatter, "sunlight", -10)
+        _label_value(ax_t, row.date, row.sunset, _time_formatter, "sunset", -10)
 
     sunrise_delta = df.sunrise.diff()
     sunrise_delta[sunrise_delta.abs() > 30 * SECONDS_IN_A_MINUTE] = pd.NA
@@ -223,28 +211,17 @@ def plot_sun_times(location, df, df_events, start_date, end_date, media="display
     )
 
     for _idx, row in df_events.iterrows():
-        annotation_direction_sunrise = np.sign(row.sunrise_delta)
-        annotation_direction_sunset = np.sign(row.sunset_delta)
+        offset_sunrise = -16 * np.sign(row.sunrise_delta)
+        offset_sunset = -16 * np.sign(row.sunset_delta)
         # if values are within a minute of each other, flip sign of one annotation
         if abs(row.sunrise_delta - row.sunset_delta) < SECONDS_IN_A_MINUTE:
-            annotation_direction_sunrise *= -1
-        ax_dt.annotate(
-            _delta_time_formatter(row.sunrise_delta, None),
-            (row.date, row.sunrise_delta),
-            xytext=(0, -16 * annotation_direction_sunrise),
-            textcoords="offset points",
-            ha="center",
-            va="center",
-            color=cfg.colours.sunrise,
+            offset_sunrise *= -1
+
+        _label_value(
+            ax_dt, row.date, row.sunrise_delta, _delta_time_formatter, "sunrise", offset_sunrise
         )
-        ax_dt.annotate(
-            _delta_time_formatter(row.sunset_delta, None),
-            (row.date, row.sunset_delta),
-            xytext=(0, -16 * annotation_direction_sunset),
-            textcoords="offset points",
-            ha="center",
-            va="center",
-            color=cfg.colours.sunset,
+        _label_value(
+            ax_dt, row.date, row.sunset_delta, _delta_time_formatter, "sunset", offset_sunset
         )
 
     ax_t.set_xlim(start_date, end_date)
