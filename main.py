@@ -26,8 +26,8 @@ from munch import Munch
 from pytz import timezone
 from tqdm import tqdm
 
-START_DATE = datetime(2023, 11, 1)
-END_DATE = datetime(2024, 11, 1)
+START_DATE = datetime(2024, 10, 1)
+END_DATE = datetime(2025, 11, 1)
 
 SECONDS_IN_A_MINUTE = 60
 SECONDS_IN_A_HOUR = SECONDS_IN_A_MINUTE * 60
