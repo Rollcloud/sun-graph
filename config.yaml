@@ -55,8 +55,12 @@ display:
 
 # dates to highlight the sunrises and sunsets of on the graph
 events:
-  - 2023-12-22
-  - 2024-03-20
-  - 2024-06-20
-  - 2024-09-22
-  - 2024-12-21
+  - 2023-12-22 # Southern solstice
+  - 2024-03-20 # Northward equinox
+  - 2024-06-20 # Northern solstice
+  - 2024-09-22 # Southward equinox
+  - 2024-12-21 # Southern solstice
+  - 2025-03-20 # Northward equinox
+  - 2025-06-21 # Northern solstice
+  - 2025-09-22 # Southward equinox
+  - 2025-12-21 # Southern solstice
