@@ -56,7 +56,9 @@ def get_sun_times(observer: Observer, start_date, end_date, tz=None):
     times = []
     year_of_days = pd.date_range(start_date, end_date, inclusive="both", tz=tz)
     for day in tqdm(year_of_days):
-        sunrise = observer.sun_rise_time(Time(day), "next", horizon=-0.8333 * u.deg)  # see Note 1
+        sunrise = observer.sun_rise_time(
+            Time(day), "next", horizon=-0.8333 * u.deg
+        )  # see Note 1
         local_sunrise = sunrise.to_datetime(timezone=tz)
         time_of_sunrise = (local_sunrise - day).total_seconds()
 
@@ -64,7 +66,9 @@ def get_sun_times(observer: Observer, start_date, end_date, tz=None):
         local_noon = noon.to_datetime(timezone=tz)
         time_of_noon = (local_noon - day).total_seconds()
 
-        sunset = observer.sun_set_time(Time(day), "next", horizon=-0.8333 * u.deg)  # see Note 1
+        sunset = observer.sun_set_time(
+            Time(day), "next", horizon=-0.8333 * u.deg
+        )  # see Note 1
         local_sunset = sunset.to_datetime(timezone=tz)
         time_of_sunset = (local_sunset - day).total_seconds()
 
@@ -154,7 +158,11 @@ def _label_value(axis, x, y, formatter, colour_name, vertical_offset):
 def plot_sun_times(observer, df, df_events, start_date, end_date, media="display"):
     gs_kw = dict(width_ratios=[1], height_ratios=[3, 1])
     fig, axd = plt.subplot_mosaic(
-        [["upper"], ["lower"]], gridspec_kw=gs_kw, figsize=A4_INCHES, dpi=DPI, layout="tight"
+        [["upper"], ["lower"]],
+        gridspec_kw=gs_kw,
+        figsize=A4_INCHES,
+        dpi=DPI,
+        layout="tight",
     )
     ax_t = axd["upper"]
     ax_dt = axd["lower"]
@@ -171,13 +179,25 @@ def plot_sun_times(observer, df, df_events, start_date, end_date, media="display
     ax_t.fill_between(df.date, df.dusk, SECONDS_IN_A_DAY, **cfg[media].fills.nightlight)
 
     ax_t.plot(
-        df_events.date, df_events.sunrise, linestyle="None", marker="o", color=cfg.colours.sunrise
+        df_events.date,
+        df_events.sunrise,
+        linestyle="None",
+        marker="o",
+        color=cfg.colours.sunrise,
     )
     ax_t.plot(
-        df_events.date, df_events.noon, linestyle="None", marker="o", color=cfg.colours.sunlight
+        df_events.date,
+        df_events.noon,
+        linestyle="None",
+        marker="o",
+        color=cfg.colours.sunlight,
     )
     ax_t.plot(
-        df_events.date, df_events.sunset, linestyle="None", marker="o", color=cfg.colours.sunset
+        df_events.date,
+        df_events.sunset,
+        linestyle="None",
+        marker="o",
+        color=cfg.colours.sunset,
     )
     for _idx, row in df_events.iterrows():
         _label_value(ax_t, row.date, row.sunrise, _time_formatter, "sunrise", 10)
@@ -189,7 +209,9 @@ def plot_sun_times(observer, df, df_events, start_date, end_date, media="display
     sunset_delta = df.sunset.diff()
     sunset_delta[sunset_delta.abs() > 30 * SECONDS_IN_A_MINUTE] = pd.NA
 
-    ax_dt.plot(df.date, sunrise_delta, color=cfg.colours.sunrise, linestyle="dotted", lw=2)
+    ax_dt.plot(
+        df.date, sunrise_delta, color=cfg.colours.sunrise, linestyle="dotted", lw=2
+    )
     ax_dt.plot(df.date, sunset_delta, color=cfg.colours.sunset, linestyle="dashed")
 
     df_events["sunrise_delta"] = sunrise_delta.loc[df_events.index]
@@ -218,10 +240,20 @@ def plot_sun_times(observer, df, df_events, start_date, end_date, media="display
             offset_sunrise *= -1
 
         _label_value(
-            ax_dt, row.date, row.sunrise_delta, _delta_time_formatter, "sunrise", offset_sunrise
+            ax_dt,
+            row.date,
+            row.sunrise_delta,
+            _delta_time_formatter,
+            "sunrise",
+            offset_sunrise,
         )
         _label_value(
-            ax_dt, row.date, row.sunset_delta, _delta_time_formatter, "sunset", offset_sunset
+            ax_dt,
+            row.date,
+            row.sunset_delta,
+            _delta_time_formatter,
+            "sunset",
+            offset_sunset,
         )
 
     ax_t.set_xlim(start_date, end_date)
@@ -263,22 +295,46 @@ def plot_sun_times(observer, df, df_events, start_date, end_date, media="display
     sunrise = Line2D([0], [0], color=cfg.colours.sunrise, label="Sunrise")
     sunset = Line2D([0], [0], color=cfg.colours.sunset, label="Sunset")
     solstice_equinox = Line2D(
-        [0], [0], color=cfg.colours.sunlight, marker="o", linestyle="none", label="Solstice/Equinox"
+        [0],
+        [0],
+        color=cfg.colours.sunlight,
+        marker="o",
+        linestyle="none",
+        label="Solstice/Equinox",
     )
     noon = Line2D([0], [0], color=cfg.colours.sunlight, label="Solar Noon")
     change_sunrise = Line2D(
-        [0], [0], color=cfg.colours.sunrise, linestyle="dotted", label="Change Sunrise", lw=2
+        [0],
+        [0],
+        color=cfg.colours.sunrise,
+        linestyle="dotted",
+        label="Change Sunrise",
+        lw=2,
     )
     change_sunset = Line2D(
         [0], [0], color=cfg.colours.sunset, linestyle="dashed", label="Change Sunset"
     )
-    upper_handles = [nighttime, twilight, daytime, solstice_equinox, sunrise, noon, sunset]
+    upper_handles = [
+        nighttime,
+        twilight,
+        daytime,
+        solstice_equinox,
+        sunrise,
+        noon,
+        sunset,
+    ]
     lower_handles = [solstice_equinox, change_sunrise, change_sunset]
     ax_t.legend(
-        handles=upper_handles, loc="center", bbox_to_anchor=(0.5, 1.05), ncol=len(upper_handles)
+        handles=upper_handles,
+        loc="center",
+        bbox_to_anchor=(0.5, 1.05),
+        ncol=len(upper_handles),
     )
     ax_dt.legend(
-        handles=lower_handles, loc="center", bbox_to_anchor=(0.5, 1.10), ncol=len(lower_handles)
+        handles=lower_handles,
+        loc="center",
+        bbox_to_anchor=(0.5, 1.10),
+        ncol=len(lower_handles),
     )
 
     ax_t.set_xlabel("Date")
@@ -300,7 +356,9 @@ def plot_sun_times(observer, df, df_events, start_date, end_date, media="display
 
 @click.command()
 @click.argument("observer_name")
-@click.option("-r", "--recalculate", is_flag=True, help="Recalculate sunrise and sunset times.")
+@click.option(
+    "-r", "--recalculate", is_flag=True, help="Recalculate sunrise and sunset times."
+)
 def main(observer_name, recalculate):
     """Generate sun graphs for observer_NAME."""
 
