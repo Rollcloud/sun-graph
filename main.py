@@ -2,9 +2,10 @@
 #
 # Note 1:
 #
-# The USNO definition for sunset/sunrise is when the center of the sun is 0.8333 degrees below the horizon
-# this is an approximation that takes into account the sun's average radius and an average amount of atmospheric refraction.
-# See https://github.com/astropy/astroplan/issues/409#issuecomment-554570085
+# The USNO definition for sunset/sunrise is when the center of the sun is 0.8333
+# degrees below the horizon this is an approximation that takes into account the
+# sun's average radius and an average amount of atmospheric refraction. See
+# https://github.com/astropy/astroplan/issues/409#issuecomment-554570085
 
 import re
 from datetime import datetime
@@ -57,9 +58,7 @@ def get_sun_times(observer: Observer, start_date, end_date, tz=None):
     times = []
     year_of_days = pd.date_range(start_date, end_date, inclusive="both", tz=tz)
     for day in tqdm(year_of_days):
-        sunrise = observer.sun_rise_time(
-            Time(day), "next", horizon=-0.8333 * u.deg
-        )  # see Note 1
+        sunrise = observer.sun_rise_time(Time(day), "next", horizon=-0.8333 * u.deg)  # see Note 1
         local_sunrise = sunrise.to_datetime(timezone=tz)
         time_of_sunrise = (local_sunrise - day).total_seconds()
 
@@ -67,9 +66,7 @@ def get_sun_times(observer: Observer, start_date, end_date, tz=None):
         local_noon = noon.to_datetime(timezone=tz)
         time_of_noon = (local_noon - day).total_seconds()
 
-        sunset = observer.sun_set_time(
-            Time(day), "next", horizon=-0.8333 * u.deg
-        )  # see Note 1
+        sunset = observer.sun_set_time(Time(day), "next", horizon=-0.8333 * u.deg)  # see Note 1
         local_sunset = sunset.to_datetime(timezone=tz)
         time_of_sunset = (local_sunset - day).total_seconds()
 
@@ -199,9 +196,7 @@ def plot_sun_times(observer, df, df_events, start_date, end_date, media="display
     ax_dt = axd["lower"]
 
     ax_t.fill_between(df.date, 0, df.astronomical_dawn, **cfg[media].fills.nightlight)
-    ax_t.plot(
-        df.date, df.astronomical_dawn, lw=1, color=cfg.colours.astronomical_twilight
-    )
+    ax_t.plot(df.date, df.astronomical_dawn, lw=1, color=cfg.colours.astronomical_twilight)
     ax_t.fill_between(
         df.date,
         df.astronomical_dawn,
@@ -218,9 +213,7 @@ def plot_sun_times(observer, df, df_events, start_date, end_date, media="display
     ax_t.plot(df.date, df.sunset, lw=2, color=cfg.colours.sunset)
     ax_t.fill_between(df.date, df.sunset, df.dusk, **cfg[media].fills.twilight)
     ax_t.plot(df.date, df.dusk, lw=1, color=cfg.colours.twilight)
-    ax_t.fill_between(
-        df.date, df.dusk, df.nautical_dusk, **cfg[media].fills.nautical_twilight
-    )
+    ax_t.fill_between(df.date, df.dusk, df.nautical_dusk, **cfg[media].fills.nautical_twilight)
     ax_t.plot(df.date, df.nautical_dusk, lw=1, color=cfg.colours.nautical_twilight)
     ax_t.fill_between(
         df.date,
@@ -228,9 +221,7 @@ def plot_sun_times(observer, df, df_events, start_date, end_date, media="display
         df.astronomical_dusk,
         **cfg[media].fills.astronomical_twilight,
     )
-    ax_t.plot(
-        df.date, df.astronomical_dusk, lw=1, color=cfg.colours.astronomical_twilight
-    )
+    ax_t.plot(df.date, df.astronomical_dusk, lw=1, color=cfg.colours.astronomical_twilight)
     ax_t.fill_between(
         df.date, df.astronomical_dusk, SECONDS_IN_A_DAY, **cfg[media].fills.nightlight
     )
@@ -266,9 +257,7 @@ def plot_sun_times(observer, df, df_events, start_date, end_date, media="display
     sunset_delta = df.sunset.diff()
     sunset_delta[sunset_delta.abs() > 30 * SECONDS_IN_A_MINUTE] = pd.NA
 
-    ax_dt.plot(
-        df.date, sunrise_delta, color=cfg.colours.sunrise, linestyle="dotted", lw=2
-    )
+    ax_dt.plot(df.date, sunrise_delta, color=cfg.colours.sunrise, linestyle="dotted", lw=2)
     ax_dt.plot(df.date, sunset_delta, color=cfg.colours.sunset, linestyle="dashed")
 
     df_events["sunrise_delta"] = sunrise_delta.loc[df_events.index]
@@ -388,7 +377,7 @@ def plot_sun_times(observer, df, df_events, start_date, end_date, media="display
         noon,
         sunset,
     ]
-    # interleave first and second halves of the legend entries to effectively convert columns to rows
+    # interleave top and bottom halves of the legend entries to effectively convert columns to rows
     number_of_columns = int(np.ceil(len(upper_handles) / 2))
     upper_handles = [
         val
@@ -432,9 +421,7 @@ def plot_sun_times(observer, df, df_events, start_date, end_date, media="display
 
 @click.command()
 @click.argument("observer_name")
-@click.option(
-    "-r", "--recalculate", is_flag=True, help="Recalculate sunrise and sunset times."
-)
+@click.option("-r", "--recalculate", is_flag=True, help="Recalculate sunrise and sunset times.")
 def main(observer_name, recalculate):
     """Generate sun graphs for observer_NAME."""
 

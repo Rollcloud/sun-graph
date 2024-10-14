@@ -37,3 +37,12 @@ Generates:
 Additional locations can be added to `locations.yaml` by duplicating and changing the existing entry.
 
 Additional events, such as solstices and equinoxes, can be added to `config.yaml` under `events`.
+
+## Lint
+
+```sh
+black .
+flake8 .
+isort .
+mypy .
+```
