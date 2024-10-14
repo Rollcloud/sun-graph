@@ -204,7 +204,7 @@ def plot_sun_times(observer, df, df_events, start_date, end_date, media="display
         **cfg[media].fills.astronomical_twilight,
     )
     ax_t.plot(df.date, df.nautical_dawn, lw=1, color=cfg.colours.nautical_twilight)
-    ax_t.fill_between(df.date, df.nautical_dawn, df.dawn, **cfg[media].fills.twilight)
+    ax_t.fill_between(df.date, df.nautical_dawn, df.dawn, **cfg[media].fills.nautical_twilight)
     ax_t.plot(df.date, df.dawn, lw=1, color=cfg.colours.twilight)
     ax_t.fill_between(df.date, df.dawn, df.sunrise, **cfg[media].fills.twilight)
     ax_t.plot(df.date, df.sunrise, lw=2, color=cfg.colours.sunrise)
