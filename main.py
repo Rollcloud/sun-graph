@@ -88,9 +88,18 @@ def get_sun_times(observer: Observer, start_date, end_date, tz=None):
         local_nautical_dusk = nautical_dusk.to_datetime(timezone=tz)
         time_of_nautical_dusk = (local_nautical_dusk - day).total_seconds()
 
+        astronomical_dawn = observer.twilight_morning_astronomical(Time(day), "next")
+        local_astronomical_dawn = astronomical_dawn.to_datetime(timezone=tz)
+        time_of_astronomical_dawn = (local_astronomical_dawn - day).total_seconds()
+
+        astronomical_dusk = observer.twilight_evening_astronomical(Time(day), "next")
+        local_astronomical_dusk = astronomical_dusk.to_datetime(timezone=tz)
+        time_of_astronomical_dusk = (local_astronomical_dusk - day).total_seconds()
+
         times.append(
             {
                 "date": day,
+                "astronomical_dawn": time_of_astronomical_dawn,
                 "nautical_dawn": time_of_nautical_dawn,
                 "dawn": time_of_dawn,
                 "sunrise": time_of_sunrise,
@@ -98,6 +107,7 @@ def get_sun_times(observer: Observer, start_date, end_date, tz=None):
                 "sunset": time_of_sunset,
                 "dusk": time_of_dusk,
                 "nautical_dusk": time_of_nautical_dusk,
+                "astronomical_dusk": time_of_astronomical_dusk,
             }
         )
 
@@ -177,11 +187,18 @@ def plot_sun_times(observer, df, df_events, start_date, end_date, media="display
     ax_t = axd["upper"]
     ax_dt = axd["lower"]
 
-    ax_t.fill_between(df.date, 0, df.nautical_dawn, **cfg[media].fills.nightlight)
-    ax_t.plot(df.date, df.nautical_dawn, lw=1, color=cfg.colours.nautical_twilight)
-    ax_t.fill_between(
-        df.date, df.nautical_dawn, df.dawn, **cfg[media].fills.nautical_twilight
+    ax_t.fill_between(df.date, 0, df.astronomical_dawn, **cfg[media].fills.nightlight)
+    ax_t.plot(
+        df.date, df.astronomical_dawn, lw=1, color=cfg.colours.astronomical_twilight
     )
+    ax_t.fill_between(
+        df.date,
+        df.astronomical_dawn,
+        df.nautical_dawn,
+        **cfg[media].fills.astronomical_twilight,
+    )
+    ax_t.plot(df.date, df.nautical_dawn, lw=1, color=cfg.colours.nautical_twilight)
+    ax_t.fill_between(df.date, df.nautical_dawn, df.dawn, **cfg[media].fills.twilight)
     ax_t.plot(df.date, df.dawn, lw=1, color=cfg.colours.twilight)
     ax_t.fill_between(df.date, df.dawn, df.sunrise, **cfg[media].fills.twilight)
     ax_t.plot(df.date, df.sunrise, lw=2, color=cfg.colours.sunrise)
@@ -195,7 +212,16 @@ def plot_sun_times(observer, df, df_events, start_date, end_date, media="display
     )
     ax_t.plot(df.date, df.nautical_dusk, lw=1, color=cfg.colours.nautical_twilight)
     ax_t.fill_between(
-        df.date, df.nautical_dusk, SECONDS_IN_A_DAY, **cfg[media].fills.nightlight
+        df.date,
+        df.nautical_dusk,
+        df.astronomical_dusk,
+        **cfg[media].fills.astronomical_twilight,
+    )
+    ax_t.plot(
+        df.date, df.astronomical_dusk, lw=1, color=cfg.colours.astronomical_twilight
+    )
+    ax_t.fill_between(
+        df.date, df.astronomical_dusk, SECONDS_IN_A_DAY, **cfg[media].fills.nightlight
     )
 
     ax_t.plot(
@@ -310,6 +336,9 @@ def plot_sun_times(observer, df, df_events, start_date, end_date, media="display
     ax_dt.grid(True, "major", "both", zorder=1001, alpha=cfg[media].grid_alpha, c="0.5")
 
     nighttime = mpatches.Patch(**cfg[media].fills.nightlight, label="Darkness")
+    astronomical_twilight = mpatches.Patch(
+        **cfg[media].fills.astronomical_twilight, label="Astronomical Twilight"
+    )
     nautical_twilight = mpatches.Patch(
         **cfg[media].fills.nautical_twilight, label="Nautical Twilight"
     )
@@ -339,6 +368,7 @@ def plot_sun_times(observer, df, df_events, start_date, end_date, media="display
     )
     upper_handles = [
         nighttime,
+        astronomical_twilight,
         nautical_twilight,
         twilight,
         daytime,

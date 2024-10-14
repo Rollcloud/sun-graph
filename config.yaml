@@ -6,7 +6,8 @@ define: &orange "#ff6f00"
 define: &yellow "#ffe577"
 define: &twilight "#6279b8"
 define: &nautical_twilight "#4f69af"
-define: &nightlight "#465d9b"
+define: &astronomical_twilight "#465d9b"
+define: &nightlight "#3d5188"
 define: &charcoal '#444'
 
 colours:
@@ -16,7 +17,8 @@ colours:
   sunset: *orange
   daylight: *yellow
   twilight: *twilight
-  nautical_twilight: *twilight
+  nautical_twilight: *nautical_twilight
+  astronomical_twilight: *astronomical_twilight
   nightlight: *nightlight
   charcoal: *charcoal
 
@@ -33,8 +35,12 @@ print:
       hatch: "oo"
     nautical_twilight:
       fc: *white
-      ec: *twilight
+      ec: *nautical_twilight
       hatch: ".."
+    astronomical_twilight:
+      fc: *white
+      ec: *astronomical_twilight
+      hatch: "."
     nightlight:
       fc: *white
       ec: *nightlight
@@ -43,6 +49,7 @@ print:
     daylight: *pink_orange
     twilight: *charcoal
     nautical_twilight: *charcoal
+    astronomical_twilight: *charcoal
     nightlight: *charcoal
 
 display:
@@ -54,12 +61,15 @@ display:
       color: *twilight
     nautical_twilight:
       color: *nautical_twilight
+    astronomical_twilight:
+      color: *astronomical_twilight
     nightlight:
       color: *nightlight
   contrast:
     daylight: *pink_orange
     twilight: *white
     nautical_twilight: *white
+    astronomical_twilight: *white
     nightlight: *white
 
 
