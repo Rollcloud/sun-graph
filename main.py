@@ -90,11 +90,21 @@ def get_sun_times(observer: Observer, start_date, end_date, tz=None):
 
         astronomical_dawn = observer.twilight_morning_astronomical(Time(day), "next")
         local_astronomical_dawn = astronomical_dawn.to_datetime(timezone=tz)
-        time_of_astronomical_dawn = (local_astronomical_dawn - day).total_seconds()
+        try:
+            time_of_astronomical_dawn = (local_astronomical_dawn - day).total_seconds()
+        except TypeError:
+            # TypeError: unsupported operand type(s) for -: 'MaskedArray' and 'Timestamp'
+            # Most likely due to no astronomical twilight in Summer
+            time_of_astronomical_dawn = 0
 
         astronomical_dusk = observer.twilight_evening_astronomical(Time(day), "next")
         local_astronomical_dusk = astronomical_dusk.to_datetime(timezone=tz)
-        time_of_astronomical_dusk = (local_astronomical_dusk - day).total_seconds()
+        try:
+            time_of_astronomical_dusk = (local_astronomical_dusk - day).total_seconds()
+        except TypeError:
+            # TypeError: unsupported operand type(s) for -: 'MaskedArray' and 'Timestamp'
+            # Most likely due to no astronomical twilight in Summer
+            time_of_astronomical_dusk = SECONDS_IN_A_DAY
 
         times.append(
             {
