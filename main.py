@@ -8,6 +8,7 @@
 
 import re
 from datetime import datetime
+from itertools import zip_longest
 from pathlib import Path
 
 import astropy.units as u
@@ -387,12 +388,23 @@ def plot_sun_times(observer, df, df_events, start_date, end_date, media="display
         noon,
         sunset,
     ]
+    # interleave first and second halves of the legend entries to effectively convert columns to rows
+    number_of_columns = int(np.ceil(len(upper_handles) / 2))
+    upper_handles = [
+        val
+        for pair in zip_longest(
+            upper_handles[:number_of_columns],
+            upper_handles[number_of_columns:],
+        )
+        for val in pair
+        if val is not None
+    ]
     lower_handles = [solstice_equinox, change_sunrise, change_sunset]
     ax_t.legend(
         handles=upper_handles,
         loc="center",
         bbox_to_anchor=(0.5, 1.05),
-        ncol=len(upper_handles),
+        ncol=number_of_columns,
     )
     ax_dt.legend(
         handles=lower_handles,
