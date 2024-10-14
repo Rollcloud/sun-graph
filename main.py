@@ -184,7 +184,7 @@ def _label_value(axis, x, y, formatter, colour_name, vertical_offset):
 
 
 def plot_sun_times(observer, df, df_events, start_date, end_date, media="display"):
-    gs_kw = dict(width_ratios=[1], height_ratios=[3, 1])
+    gs_kw = dict(width_ratios=[1], height_ratios=[4, 1])
     fig, axd = plt.subplot_mosaic(
         [["upper"], ["lower"]],
         gridspec_kw=gs_kw,
@@ -392,13 +392,13 @@ def plot_sun_times(observer, df, df_events, start_date, end_date, media="display
     ax_t.legend(
         handles=upper_handles,
         loc="center",
-        bbox_to_anchor=(0.5, 1.05),
+        bbox_to_anchor=(0.5, 1.06),
         ncol=number_of_columns,
     )
     ax_dt.legend(
         handles=lower_handles,
         loc="center",
-        bbox_to_anchor=(0.5, 1.10),
+        bbox_to_anchor=(0.5, 1.15),
         ncol=len(lower_handles),
     )
 
