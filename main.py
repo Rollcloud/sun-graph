@@ -35,6 +35,8 @@ SECONDS_IN_A_MINUTE = 60
 SECONDS_IN_A_HOUR = SECONDS_IN_A_MINUTE * 60
 SECONDS_IN_A_DAY = SECONDS_IN_A_HOUR * 24
 
+USNO_HORIZON = -0.8333 * u.deg  # see Note 1
+
 ISO_DATE_FORMAT = "%Y-%m-%d"
 A4_INCHES = (11.69, 8.27)
 DPI = 300
@@ -54,68 +56,44 @@ class DataInvalidError(Exception):
     pass
 
 
+class Astrolabe:
+    """Use to calculate sunrise and sunset times and other events."""
+
+    def __init__(self, observer, tz, day):
+        self.observer = observer
+        self.tz = tz
+        self.day = day
+
+    def calculate(self, event_name, **kwargs):
+        event = getattr(self.observer, event_name)(Time(self.day), **kwargs)
+        local_event = event.to_datetime(timezone=self.tz)
+        try:
+            time_of_event = (local_event - self.day).total_seconds()
+        except TypeError:
+            # TypeError: unsupported operand type(s) for -: 'MaskedArray' and 'Timestamp'
+            # Most likely due to no astronomical twilight in Summer, etc.
+            is_early_event = "morning" in event_name or "rise" in event_name
+            time_of_event = 0 if is_early_event else SECONDS_IN_A_DAY
+        return time_of_event
+
+
 def get_sun_times(observer: Observer, start_date, end_date, tz=None):
     times = []
     year_of_days = pd.date_range(start_date, end_date, inclusive="both", tz=tz)
     for day in tqdm(year_of_days):
-        sunrise = observer.sun_rise_time(Time(day), "next", horizon=-0.8333 * u.deg)  # see Note 1
-        local_sunrise = sunrise.to_datetime(timezone=tz)
-        time_of_sunrise = (local_sunrise - day).total_seconds()
-
-        noon = observer.noon(Time(day), "next")
-        local_noon = noon.to_datetime(timezone=tz)
-        time_of_noon = (local_noon - day).total_seconds()
-
-        sunset = observer.sun_set_time(Time(day), "next", horizon=-0.8333 * u.deg)  # see Note 1
-        local_sunset = sunset.to_datetime(timezone=tz)
-        time_of_sunset = (local_sunset - day).total_seconds()
-
-        dawn = observer.twilight_morning_civil(Time(day), "next")
-        local_dawn = dawn.to_datetime(timezone=tz)
-        time_of_dawn = (local_dawn - day).total_seconds()
-
-        dusk = observer.twilight_evening_civil(Time(day), "next")
-        local_dusk = dusk.to_datetime(timezone=tz)
-        time_of_dusk = (local_dusk - day).total_seconds()
-
-        nautical_dawn = observer.twilight_morning_nautical(Time(day), "next")
-        local_nautical_dawn = nautical_dawn.to_datetime(timezone=tz)
-        time_of_nautical_dawn = (local_nautical_dawn - day).total_seconds()
-
-        nautical_dusk = observer.twilight_evening_nautical(Time(day), "next")
-        local_nautical_dusk = nautical_dusk.to_datetime(timezone=tz)
-        time_of_nautical_dusk = (local_nautical_dusk - day).total_seconds()
-
-        astronomical_dawn = observer.twilight_morning_astronomical(Time(day), "next")
-        local_astronomical_dawn = astronomical_dawn.to_datetime(timezone=tz)
-        try:
-            time_of_astronomical_dawn = (local_astronomical_dawn - day).total_seconds()
-        except TypeError:
-            # TypeError: unsupported operand type(s) for -: 'MaskedArray' and 'Timestamp'
-            # Most likely due to no astronomical twilight in Summer
-            time_of_astronomical_dawn = 0
-
-        astronomical_dusk = observer.twilight_evening_astronomical(Time(day), "next")
-        local_astronomical_dusk = astronomical_dusk.to_datetime(timezone=tz)
-        try:
-            time_of_astronomical_dusk = (local_astronomical_dusk - day).total_seconds()
-        except TypeError:
-            # TypeError: unsupported operand type(s) for -: 'MaskedArray' and 'Timestamp'
-            # Most likely due to no astronomical twilight in Summer
-            time_of_astronomical_dusk = SECONDS_IN_A_DAY
-
+        astrolabe = Astrolabe(observer, tz, day)
         times.append(
             {
                 "date": day,
-                "astronomical_dawn": time_of_astronomical_dawn,
-                "nautical_dawn": time_of_nautical_dawn,
-                "dawn": time_of_dawn,
-                "sunrise": time_of_sunrise,
-                "noon": time_of_noon,
-                "sunset": time_of_sunset,
-                "dusk": time_of_dusk,
-                "nautical_dusk": time_of_nautical_dusk,
-                "astronomical_dusk": time_of_astronomical_dusk,
+                "astronomical_dawn": astrolabe.calculate("twilight_morning_astronomical"),
+                "nautical_dawn": astrolabe.calculate("twilight_morning_nautical"),
+                "dawn": astrolabe.calculate("twilight_morning_civil"),
+                "sunrise": astrolabe.calculate("sun_rise_time", horizon=USNO_HORIZON),  # see Note 1
+                "noon": astrolabe.calculate("noon"),
+                "sunset": astrolabe.calculate("sun_set_time", horizon=USNO_HORIZON),  # see Note 1
+                "dusk": astrolabe.calculate("twilight_evening_civil"),
+                "nautical_dusk": astrolabe.calculate("twilight_evening_nautical"),
+                "astronomical_dusk": astrolabe.calculate("twilight_evening_astronomical"),
             }
         )
 
