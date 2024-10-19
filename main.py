@@ -44,7 +44,7 @@ DPI = 300
 with open("config.yaml") as f:
     cfg = Munch.fromDict(yaml.load(f, Loader=yaml.FullLoader))
 
-with open("locations.yaml") as f:
+with open("locations.yaml", encoding="utf8") as f:
     locs = Munch.fromDict(yaml.load(f, Loader=yaml.FullLoader))
 
 p = Path()
