@@ -174,35 +174,36 @@ def plot_sun_times(observer, df, df_events, start_date, end_date, media="display
     ax_dt = axd["lower"]
 
     ax_t.fill_between(df.date, 0, df.astronomical_dawn, **cfg[media].fills.nightlight)
+    ax_t.fill_between(
+        df.date, df.astronomical_dusk, SECONDS_IN_A_DAY, **cfg[media].fills.nightlight
+    )
     ax_t.plot(df.date, df.astronomical_dawn, lw=1, color=cfg.colours.astronomical_twilight)
+    ax_t.plot(df.date, df.astronomical_dusk, lw=1, color=cfg.colours.astronomical_twilight)
+
     ax_t.fill_between(
         df.date,
         df.astronomical_dawn,
         df.nautical_dawn,
         **cfg[media].fills.astronomical_twilight,
     )
-    ax_t.plot(df.date, df.nautical_dawn, lw=1, color=cfg.colours.nautical_twilight)
-    ax_t.fill_between(df.date, df.nautical_dawn, df.dawn, **cfg[media].fills.nautical_twilight)
-    ax_t.plot(df.date, df.dawn, lw=1, color=cfg.colours.twilight)
-    ax_t.fill_between(df.date, df.dawn, df.sunrise, **cfg[media].fills.twilight)
-    ax_t.plot(df.date, df.sunrise, lw=2, color=cfg.colours.sunrise)
-    ax_t.fill_between(df.date, df.sunrise, df.sunset, **cfg[media].fills.daylight)
-    ax_t.plot(df.date, df.noon, lw=2, color=cfg.colours.sunlight)
-    ax_t.plot(df.date, df.sunset, lw=2, color=cfg.colours.sunset)
-    ax_t.fill_between(df.date, df.sunset, df.dusk, **cfg[media].fills.twilight)
-    ax_t.plot(df.date, df.dusk, lw=1, color=cfg.colours.twilight)
-    ax_t.fill_between(df.date, df.dusk, df.nautical_dusk, **cfg[media].fills.nautical_twilight)
-    ax_t.plot(df.date, df.nautical_dusk, lw=1, color=cfg.colours.nautical_twilight)
     ax_t.fill_between(
         df.date,
         df.nautical_dusk,
         df.astronomical_dusk,
         **cfg[media].fills.astronomical_twilight,
     )
-    ax_t.plot(df.date, df.astronomical_dusk, lw=1, color=cfg.colours.astronomical_twilight)
-    ax_t.fill_between(
-        df.date, df.astronomical_dusk, SECONDS_IN_A_DAY, **cfg[media].fills.nightlight
-    )
+    ax_t.plot(df.date, df.nautical_dawn, lw=1, color=cfg.colours.nautical_twilight)
+    ax_t.plot(df.date, df.nautical_dusk, lw=1, color=cfg.colours.nautical_twilight)
+    ax_t.fill_between(df.date, df.nautical_dawn, df.dawn, **cfg[media].fills.nautical_twilight)
+    ax_t.fill_between(df.date, df.dusk, df.nautical_dusk, **cfg[media].fills.nautical_twilight)
+    ax_t.plot(df.date, df.dawn, lw=1, color=cfg.colours.twilight)
+    ax_t.plot(df.date, df.dusk, lw=1, color=cfg.colours.twilight)
+    ax_t.fill_between(df.date, df.dawn, df.sunrise, **cfg[media].fills.twilight)
+    ax_t.fill_between(df.date, df.sunset, df.dusk, **cfg[media].fills.twilight)
+    ax_t.plot(df.date, df.sunrise, lw=2, color=cfg.colours.sunrise)
+    ax_t.plot(df.date, df.sunset, lw=2, color=cfg.colours.sunset)
+    ax_t.fill_between(df.date, df.sunrise, df.sunset, **cfg[media].fills.daylight)
+    ax_t.plot(df.date, df.noon, lw=2, color=cfg.colours.sunlight)
 
     ax_t.plot(
         df_events.date,
