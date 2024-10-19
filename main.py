@@ -63,15 +63,32 @@ class Astrolabe:
         self.observer = observer
         self.tz = tz
         self.day = day
+        self.noon = self.calculate("noon")
+        self.midnight = self.calculate("midnight", which="nearest")
 
-    def calculate(self, event_name, **kwargs):
-        event = getattr(self.observer, event_name)(Time(self.day), which="next", **kwargs)
+    def calculate(self, event_name, which="next", **kwargs):
+        if event_name == "noon" and hasattr(self, "noon"):
+            return self.noon
+        if event_name == "midnight" and hasattr(self, "midnight"):
+            return self.midnight
+
+        event = getattr(self.observer, event_name)(Time(self.day), which=which, **kwargs)
         local_event = event.to_datetime(timezone=self.tz)
         try:
             time_of_event = (local_event - self.day).total_seconds()
+
+            if ("set" in event_name or "evening" in event_name) and time_of_event < self.noon:
+                # prevent early plotting of evening events that occur after midnight
+                time_of_event += SECONDS_IN_A_DAY
         except TypeError:
             # TypeError: unsupported operand type(s) for -: 'MaskedArray' and 'Timestamp'
             # Most likely due to that event not occurring at that time of year
+
+            # don't allow noon or midnight to error out to prevent a nasty game of recursion
+            if "noon" in event_name:
+                return SECONDS_IN_A_DAY / 2
+            if "midnight" in event_name:
+                return 0
 
             # Squish events to the start and end of the day or noon, depending on the sun position
             horizon = kwargs.get("horizon", None)
@@ -85,15 +102,11 @@ class Astrolabe:
             is_dark_side = self.observer.is_night(Time(self.day), horizon=horizon)
 
             if is_dark_side:
-                noon = self.calculate("noon")
-                time_of_event = noon
+                time_of_event = self.noon
             else:
-                if "morning" in event_name or "rise" in event_name:
-                    start_of_day = 0
-                    time_of_event = start_of_day
-                else:
-                    end_of_day = SECONDS_IN_A_DAY
-                    time_of_event = end_of_day
+                time_of_event = self.midnight
+                if "set" in event_name or "evening" in event_name:
+                    time_of_event += SECONDS_IN_A_DAY
 
         return time_of_event
 
