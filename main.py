@@ -66,6 +66,12 @@ class Astrolabe:
         self.noon = self.calculate("noon")
         self.midnight = self.calculate("midnight", which="nearest")
 
+    def is_summer(self):
+        """Return True if the day is in the summer."""
+        is_northern_hemisphere = self.observer.latitude > 0
+        is_middle_of_year = 3 <= self.day.month and self.day.month <= 9
+        return is_northern_hemisphere == is_middle_of_year
+
     def calculate(self, event_name, which="next", **kwargs):
         if event_name == "noon" and hasattr(self, "noon"):
             return self.noon
@@ -90,23 +96,13 @@ class Astrolabe:
             if "midnight" in event_name:
                 return 0
 
-            # Squish events to the start and end of the day or noon, depending on the sun position
-            horizon = kwargs.get("horizon", None)
-            if "civil" in event_name:
-                horizon = -6 * u.deg
-            elif "nautical" in event_name:
-                horizon = -12 * u.deg
-            elif "astronomical" in event_name:
-                horizon = -18 * u.deg
-
-            is_dark_side = self.observer.is_night(Time(self.day), horizon=horizon)
-
-            if is_dark_side:
-                time_of_event = self.noon
-            else:
+            # Squish events to midnight or noon, depending on the season
+            if self.is_summer():
                 time_of_event = self.midnight
                 if "set" in event_name or "evening" in event_name:
                     time_of_event += SECONDS_IN_A_DAY
+            else:
+                time_of_event = self.noon
 
         return time_of_event
 
