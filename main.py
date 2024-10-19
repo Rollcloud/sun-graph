@@ -65,15 +65,36 @@ class Astrolabe:
         self.day = day
 
     def calculate(self, event_name, **kwargs):
-        event = getattr(self.observer, event_name)(Time(self.day), "next", **kwargs)
+        event = getattr(self.observer, event_name)(Time(self.day), which="next", **kwargs)
         local_event = event.to_datetime(timezone=self.tz)
         try:
             time_of_event = (local_event - self.day).total_seconds()
         except TypeError:
             # TypeError: unsupported operand type(s) for -: 'MaskedArray' and 'Timestamp'
-            # Most likely due to no astronomical twilight in Summer, etc.
-            is_early_event = "morning" in event_name or "rise" in event_name
-            time_of_event = 0 if is_early_event else SECONDS_IN_A_DAY
+            # Most likely due to that event not occurring at that time of year
+
+            # Squish events to the start and end of the day or noon, depending on the sun position
+            horizon = kwargs.get("horizon", None)
+            if "civil" in event_name:
+                horizon = -6 * u.deg
+            elif "nautical" in event_name:
+                horizon = -12 * u.deg
+            elif "astronomical" in event_name:
+                horizon = -18 * u.deg
+
+            is_dark_side = self.observer.is_night(Time(self.day), horizon=horizon)
+
+            if is_dark_side:
+                noon = self.calculate("noon")
+                time_of_event = noon
+            else:
+                if "morning" in event_name or "rise" in event_name:
+                    start_of_day = 0
+                    time_of_event = start_of_day
+                else:
+                    end_of_day = SECONDS_IN_A_DAY
+                    time_of_event = end_of_day
+
         return time_of_event
 
 
