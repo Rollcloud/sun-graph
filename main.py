@@ -65,7 +65,7 @@ class Astrolabe:
         self.day = day
 
     def calculate(self, event_name, **kwargs):
-        event = getattr(self.observer, event_name)(Time(self.day), **kwargs)
+        event = getattr(self.observer, event_name)(Time(self.day), "next", **kwargs)
         local_event = event.to_datetime(timezone=self.tz)
         try:
             time_of_event = (local_event - self.day).total_seconds()
