@@ -188,7 +188,7 @@ def sun_times(observer: Observer, start_date, end_date, recalculate=False):
         ]
     )
     filename = _clean_name(filename)
-    filepath = p / "tmp" / f"{filename}.pkl"
+    filepath = p / "tmp" / "data" / f"{filename}.pkl"
 
     try:
         if recalculate:
@@ -506,9 +506,9 @@ def plot_sun_times(observer, df, df_events, start_date, end_date, media="display
     observer_name = _clean_name(observer.name)
     match media:
         case "display":
-            plt.savefig(p / "tmp" / f"sun-graph_{observer_name}.png")
+            plt.savefig(p / "tmp" / "plots" / f"sun-graph_{observer_name}.png")
         case "print":
-            plt.savefig(p / "tmp" / f"sun-graph_{observer_name}.pdf")
+            plt.savefig(p / "tmp" / "plots" / f"sun-graph_{observer_name}.pdf")
         case _:
             pass
     plt.close()
