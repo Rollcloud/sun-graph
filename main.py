@@ -82,7 +82,7 @@ class Astrolabe:
 
         with warnings.catch_warnings():
             # Show all warnings only once
-            warnings.simplefilter("once", Warning)
+            warnings.simplefilter("once", AstropyWarning)
             # Raise errors for specific warnings
             warnings.simplefilter("error", TargetNeverUpWarning)
             warnings.simplefilter("error", TargetAlwaysUpWarning)
