@@ -22,11 +22,14 @@ import numpy as np
 import pandas as pd
 import yaml
 from astroplan import Observer
+from astroplan.exceptions import TargetAlwaysUpWarning, TargetNeverUpWarning
 from astropy.time import Time
+from astropy.utils.exceptions import AstropyWarning
 from matplotlib.lines import Line2D
 from munch import Munch
 from pytz import timezone
 from tqdm import tqdm
+import warnings
 
 START_DATE = datetime(2024, 10, 1)
 END_DATE = datetime(2025, 11, 1)
@@ -63,48 +66,42 @@ class Astrolabe:
         self.observer = observer
         self.tz = tz
         self.day = day
-        self.noon = self.calculate("noon")
-        self.midnight = self.calculate("midnight", which="nearest")
+        self.midnight = observer.midnight(Time(day), which="nearest")
+        self.noon = observer.noon(Time(day), which="next")
 
-    def is_summer(self):
-        """Return True if the day is in the summer."""
-        is_northern_hemisphere = self.observer.latitude > 0
-        is_middle_of_year = 3 <= self.day.month and self.day.month <= 9
-        return is_northern_hemisphere == is_middle_of_year
+    def to_local_seconds(self, event):
+        """Convert event to local time in seconds."""
+        local_event = event.to_datetime(timezone=self.tz)
+        return (local_event - self.day).total_seconds()
 
     def calculate(self, event_name, which="next", **kwargs):
-        if event_name == "noon" and hasattr(self, "noon"):
-            return self.noon
-        if event_name == "midnight" and hasattr(self, "midnight"):
-            return self.midnight
+        if event_name == "noon":
+            return self.to_local_seconds(self.noon)
+        if event_name == "midnight":
+            return self.to_local_seconds(self.midnight)
 
-        event = getattr(self.observer, event_name)(Time(self.day), which=which, **kwargs)
-        local_event = event.to_datetime(timezone=self.tz)
-        try:
-            time_of_event = (local_event - self.day).total_seconds()
+        with warnings.catch_warnings():
+            # Show all warnings only once
+            warnings.simplefilter("once", Warning)
+            # Raise errors for specific warnings
+            warnings.simplefilter("error", TargetNeverUpWarning)
+            warnings.simplefilter("error", TargetAlwaysUpWarning)
+            # Ignore FutureWarnings to prevent unnecessary warnings
+            warnings.simplefilter("ignore", FutureWarning)
 
-            if ("set" in event_name or "evening" in event_name) and time_of_event < self.noon:
-                # prevent early plotting of evening events that occur after midnight
-                time_of_event += SECONDS_IN_A_DAY
-        except TypeError:
-            # TypeError: unsupported operand type(s) for -: 'MaskedArray' and 'Timestamp'
-            # Most likely due to that event not occurring at that time of year
-
-            # don't allow noon or midnight to error out to prevent a nasty game of recursion
-            if "noon" in event_name:
-                return SECONDS_IN_A_DAY / 2
-            if "midnight" in event_name:
-                return 0
-
-            # Squish events to midnight or noon, depending on the season
-            if self.is_summer():
-                time_of_event = self.midnight
+            try:
+                event = getattr(self.observer, event_name)(self.midnight, which=which, **kwargs)
+                return self.to_local_seconds(event)
+            except TargetNeverUpWarning:
+                # this event doesn't occur, return noon
+                return self.to_local_seconds(self.noon)
+            except TargetAlwaysUpWarning:
+                # this event occurs all day, return midnight
+                midnight = self.to_local_seconds(self.noon)
                 if "set" in event_name or "evening" in event_name:
-                    time_of_event += SECONDS_IN_A_DAY
-            else:
-                time_of_event = self.noon
-
-        return time_of_event
+                    # if the event is a setting event, return the following midnight
+                    midnight += SECONDS_IN_A_DAY
+                return midnight
 
 
 def get_sun_times(observer: Observer, start_date, end_date, tz=None):
@@ -115,7 +112,7 @@ def get_sun_times(observer: Observer, start_date, end_date, tz=None):
         times.append(
             {
                 "date": day,
-                "midnight": astrolabe.calculate("midnight", which="nearest"),
+                "midnight": astrolabe.calculate("midnight"),
                 "astronomical_dawn": astrolabe.calculate("twilight_morning_astronomical"),
                 "nautical_dawn": astrolabe.calculate("twilight_morning_nautical"),
                 "dawn": astrolabe.calculate("twilight_morning_civil"),
@@ -129,6 +126,20 @@ def get_sun_times(observer: Observer, start_date, end_date, tz=None):
         )
 
     return pd.DataFrame(times)
+
+
+def fix_noon_data_for(df, column):
+    """Fix the data in the column equal to noon."""
+    # Identify single values equal to noon, where the previous and next values are not equal to noon
+    error_mask = (df[column] == df.noon) & (
+        (df[column].shift(1) != df.noon.shift(1)) & (df[column].shift(-1) != df.noon.shift(-1))
+    )
+
+    # Set the column to the value of the midnight column where the mask is True
+    offset = SECONDS_IN_A_DAY if ("set" in column or "dusk" in column) else 0
+    df[column] = df[column].mask(error_mask, df.midnight + offset)
+
+    return df
 
 
 def mask_midnight_data_for(df, column):
@@ -145,7 +156,16 @@ def mask_midnight_data_for(df, column):
     return df
 
 
-def mask_invalid_data(df):
+def fix_invalid_data(df):
+    df = fix_noon_data_for(df, "astronomical_dawn")
+    df = fix_noon_data_for(df, "nautical_dawn")
+    df = fix_noon_data_for(df, "dawn")
+    df = fix_noon_data_for(df, "sunrise")
+    df = fix_noon_data_for(df, "sunset")
+    df = fix_noon_data_for(df, "dusk")
+    df = fix_noon_data_for(df, "nautical_dusk")
+    df = fix_noon_data_for(df, "astronomical_dusk")
+
     df = mask_midnight_data_for(df, "astronomical_dawn")
     df = mask_midnight_data_for(df, "nautical_dawn")
     df = mask_midnight_data_for(df, "dawn")
@@ -280,7 +300,7 @@ def plot_sun_times_with_offset(ax_t, df, offset=0, media="display"):
         df.sunset + offset_seconds,
         **cfg[media].fills.daylight,
     )
-    ax_t.plot(df.date, df.noon + offset_seconds, lw=2, color=cfg.colours.sunlight)
+    # ax_t.plot(df.date, df.noon + offset_seconds, lw=2, color=cfg.colours.sunlight)
 
 
 def plot_sun_times(observer, df, df_events, start_date, end_date, media="display"):
@@ -378,7 +398,7 @@ def plot_sun_times(observer, df, df_events, start_date, end_date, media="display
         )
 
     ax_t.set_xlim(start_date, end_date)
-    ax_t.set_ylim(0, SECONDS_IN_A_DAY)
+    # ax_t.set_ylim(0, SECONDS_IN_A_DAY)
 
     ax_dt.set_xlim(start_date, end_date)
     # make y-axis limits symmetrical
@@ -511,7 +531,7 @@ def main(observer_name, recalculate):
     )
 
     df = sun_times(observer, START_DATE, END_DATE, recalculate=recalculate)
-    df = mask_invalid_data(df)
+    df = fix_invalid_data(df)
 
     events = [str(event) for event in cfg.events]
     df_events = df[["date", "sunrise", "noon", "sunset"]]
