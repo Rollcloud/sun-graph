@@ -74,6 +74,12 @@ class Astrolabe:
         local_event = event.to_datetime(timezone=self.tz)
         return (local_event - self.day).total_seconds()
 
+    def is_summer(self):
+        """Return True if the day is in the summer."""
+        is_northern_hemisphere = self.observer.latitude > 0
+        is_middle_of_year = 3 <= self.day.month and self.day.month <= 9
+        return is_northern_hemisphere == is_middle_of_year
+
     def calculate(self, event_name, which="next", **kwargs):
         if event_name == "noon":
             return self.to_local_seconds(self.noon)
@@ -81,8 +87,6 @@ class Astrolabe:
             return self.to_local_seconds(self.midnight)
 
         with warnings.catch_warnings():
-            # Show all warnings only once
-            warnings.simplefilter("once", AstropyWarning)
             # Raise errors for specific warnings
             warnings.simplefilter("error", TargetNeverUpWarning)
             warnings.simplefilter("error", TargetAlwaysUpWarning)
@@ -96,12 +100,15 @@ class Astrolabe:
                 # this event doesn't occur, return noon
                 return self.to_local_seconds(self.noon)
             except TargetAlwaysUpWarning:
-                # this event occurs all day, return midnight
-                midnight = self.to_local_seconds(self.noon)
-                if "set" in event_name or "evening" in event_name:
-                    # if the event is a setting event, return the following midnight
-                    midnight += SECONDS_IN_A_DAY
-                return midnight
+                # this event occurs all day, return midnight or noon
+                if self.is_summer():
+                    event_time = self.to_local_seconds(self.midnight)
+                    if "set" in event_name or "evening" in event_name:
+                        # if the event is a setting event, return the following midnight
+                        event_time += SECONDS_IN_A_DAY
+                else:
+                    event_time = self.to_local_seconds(self.noon)
+                return event_time
 
 
 def get_sun_times(observer: Observer, start_date, end_date, tz=None):
@@ -300,7 +307,7 @@ def plot_sun_times_with_offset(ax_t, df, offset=0, media="display"):
         df.sunset + offset_seconds,
         **cfg[media].fills.daylight,
     )
-    # ax_t.plot(df.date, df.noon + offset_seconds, lw=2, color=cfg.colours.sunlight)
+    ax_t.plot(df.date, df.noon + offset_seconds, lw=2, color=cfg.colours.sunlight)
 
 
 def plot_sun_times(observer, df, df_events, start_date, end_date, media="display"):
@@ -398,7 +405,7 @@ def plot_sun_times(observer, df, df_events, start_date, end_date, media="display
         )
 
     ax_t.set_xlim(start_date, end_date)
-    # ax_t.set_ylim(0, SECONDS_IN_A_DAY)
+    ax_t.set_ylim(0, SECONDS_IN_A_DAY)
 
     ax_dt.set_xlim(start_date, end_date)
     # make y-axis limits symmetrical
