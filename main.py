@@ -8,6 +8,8 @@
 # https://github.com/astropy/astroplan/issues/409#issuecomment-554570085
 
 import re
+import warnings
+from contextlib import contextmanager
 from datetime import datetime
 from itertools import zip_longest
 from pathlib import Path
@@ -24,12 +26,10 @@ import yaml
 from astroplan import Observer
 from astroplan.exceptions import TargetAlwaysUpWarning, TargetNeverUpWarning
 from astropy.time import Time
-from astropy.utils.exceptions import AstropyWarning
 from matplotlib.lines import Line2D
 from munch import Munch
 from pytz import timezone
 from tqdm import tqdm
-import warnings
 
 START_DATE = datetime(2024, 10, 1)
 END_DATE = datetime(2025, 11, 1)
@@ -62,12 +62,40 @@ class DataInvalidError(Exception):
 class Astrolabe:
     """Use to calculate sunrise and sunset times and other events."""
 
-    def __init__(self, observer, tz, day):
+    @contextmanager
+    def catch_target_warnings(self):
+        """
+        Context manager to raise TargetNeverUpWarning and TargetAlwaysUpWarning as errors.
+        """
+        with warnings.catch_warnings():
+            # Raise errors for specific warnings
+            warnings.simplefilter("error", TargetNeverUpWarning)
+            warnings.simplefilter("error", TargetAlwaysUpWarning)
+            # Ignore FutureWarnings to prevent unnecessary warnings
+            warnings.simplefilter("ignore", FutureWarning)
+            yield
+
+    def __init__(self, observer, tz, day: pd.Timestamp):
         self.observer = observer
         self.tz = tz
         self.day = day
-        self.midnight = observer.midnight(Time(day), which="nearest")
         self.noon = observer.noon(Time(day), which="next")
+        with self.catch_target_warnings():
+            try:
+                self.midnight = observer.midnight(Time(day), which="nearest")
+            except TargetNeverUpWarning:
+                # Very occasionally, around solstices, the apparent solar day is longer than a
+                # calendar day. When this occurs, and the Observer location is aligned with the
+                # time-zone meridian, then it is possible to not have a solar midnight on a calendar
+                # day. In this case, we use the previous day's midnight. It is not obviously clear
+                # why checking for the nearest from midnight doesn't work in this case.
+                # See https://en.wikipedia.org/wiki/Solar_time#Apparent_solar_time for more details.
+                print(
+                    f"No solar midnight occurs on {day.isoformat(timespec='hours')},"
+                    f" adding an hour and trying again."
+                )
+                one_hour = pd.Timedelta(hours=1)
+                self.midnight = observer.midnight(Time(day + one_hour), which="nearest")
 
     def to_local_seconds(self, event):
         """Convert event to local time in seconds."""
@@ -86,13 +114,7 @@ class Astrolabe:
         if event_name == "midnight":
             return self.to_local_seconds(self.midnight)
 
-        with warnings.catch_warnings():
-            # Raise errors for specific warnings
-            warnings.simplefilter("error", TargetNeverUpWarning)
-            warnings.simplefilter("error", TargetAlwaysUpWarning)
-            # Ignore FutureWarnings to prevent unnecessary warnings
-            warnings.simplefilter("ignore", FutureWarning)
-
+        with self.catch_target_warnings():
             try:
                 event = getattr(self.observer, event_name)(self.midnight, which=which, **kwargs)
                 return self.to_local_seconds(event)
