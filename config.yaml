@@ -28,11 +28,11 @@ print:
     daylight:
       fc: *white
       ec: *yellow
-      hatch: "oo"
+      hatch: "ooo"
     twilight:
       fc: *white
       ec: *twilight
-      hatch: "oo"
+      hatch: "..."
     nautical_twilight:
       fc: *white
       ec: *nautical_twilight
