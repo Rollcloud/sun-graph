@@ -104,6 +104,7 @@ class Astrolabe:
 
     def is_summer(self):
         """Return True if the day is in the summer."""
+        # TODO: Improve summer detection to avoid artefacts at extreme Southern latitudes
         is_northern_hemisphere = self.observer.latitude > 0
         is_middle_of_year = 3 <= self.day.month and self.day.month <= 9
         return is_northern_hemisphere == is_middle_of_year
