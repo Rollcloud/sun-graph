@@ -40,8 +40,7 @@ Additional events, such as solstices and equinoxes, can be added to `config.yaml
 ## Lint
 
 ```sh
-black .
-flake8 .
-isort .
-mypy .
+uvx ruff format
+uvx ruff check --fix
+uvx mypy .
 ```
