@@ -31,6 +31,14 @@ Generates:
 - PNG (display):
   ![sun-graph_ibiza-spain.png](docs/sun-graph_ibiza-spain.png)
 
+## Webserver
+
+To Run the built-in webserver:
+
+```sh
+uv run uvicorn serve:app --port 8080 --reload
+```
+
 ## Configuration
 
 Additional locations can be added to `locations.yaml` by duplicating and changing the existing entry.
