@@ -5,14 +5,13 @@ Generate a graph showing sunrise and sunset times for the next year.
 ## Install
 
 ```sh
-python -m venv .venv
-pip install -r requirements.txt
+uv sync
 ```
 
 ## Run
 
 ```sh
-$ python main.py --help
+$ uv run main.py --help
 Usage: main.py [OPTIONS] LOCATION_NAME
 
   Generate sun graphs for LOCATION_NAME.
@@ -23,7 +22,7 @@ Options:
 ```
 
 ```sh
-$ python main.py ibiza
+$ uv run main.py ibiza
 ```
 
 Generates:

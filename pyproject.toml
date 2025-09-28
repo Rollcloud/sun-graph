@@ -1,2 +1,23 @@
+[project]
+name = "sun-graph"
+version = "1.0.0"
+description = "Generates a graph showing sunrise and sunset times for the next year."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "astroplan~=0.10.1",
+  "astropy[recommended]~=6.0",
+  "click~=8.0",
+  "munch~=4.0",
+  'numpy~=1.0',
+  "pandas~=2.0",
+  "pytz==2024.2",
+  "pyyaml~=6.0",
+  "tqdm~=4.66",
+]
+
+[project.optional-dependencies]
+dev = ["black", "flake8", "isort", "mypy"]
+
 [tool.black]
 line-length = 100
