@@ -1,5 +1,9 @@
-from starlette.responses import PlainTextResponse
+from starlette.templating import Jinja2Templates
+
+from . import settings
+
+templates = Jinja2Templates(directory=str(settings.TEMPLATES_DIR))
 
 
 async def home(request):
-    return PlainTextResponse("Hello, world!")
+    return templates.TemplateResponse(request, "index.html")
