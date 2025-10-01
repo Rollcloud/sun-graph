@@ -36,7 +36,7 @@ Generates:
 To Run the built-in webserver:
 
 ```sh
-uv run uvicorn serve:app --port 8080 --reload
+uv run uvicorn sun_graph.serve:app --port 8080 --reload
 ```
 
 ## Configuration
