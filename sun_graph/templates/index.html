@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% set title = "Home" %} 
+{% set title = "Home" %}
 
 {% block main %}
   <h1>Hello, world!</h1>
@@ -14,13 +14,9 @@
 
     <hr class="col-1 my-4" />
 
-    <a href="https://getbootstrap.com" class="btn btn-primary"
-      >Read the Bootstrap docs</a
-    >
-    <a href="https://github.com/twbs/examples" class="btn btn-secondary"
-      >View on GitHub</a
-    >
+    <a href="https://getbootstrap.com" class="btn btn-primary">Read the Bootstrap docs</a>
+    <a href="https://github.com/twbs/examples" class="btn btn-secondary">View on GitHub</a>
   </div>
 
   <script src="{{ url_for('static', path='/js/main.js') }}"></script>
-{% endblock %}
+{% endblock main %}

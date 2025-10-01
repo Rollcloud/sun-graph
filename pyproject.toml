@@ -19,8 +19,18 @@ dependencies = [
   "uvicorn~=0.37.0",
 ]
 
-[project.optional-dependencies]
-dev = ["mypy", "ruff"]
+[dependency-groups]
+dev = [
+    "djlint>=1.36.4",
+    "mypy>=1.18.2",
+    "ruff>=0.13.2",
+]
 
 [tool.ruff]
 line-length = 100
+
+[tool.djlint]
+profile="jinja"
+indent=2
+max_blank_lines=1
+
