@@ -7,3 +7,7 @@ templates = Jinja2Templates(directory=str(settings.TEMPLATES_DIR))
 
 async def home(request):
     return templates.TemplateResponse(request, "index.html")
+
+
+async def generate(request):
+    return templates.TemplateResponse(request, "generate.html")

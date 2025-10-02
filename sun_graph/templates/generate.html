@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% set title = "Home" %}
+
+{% block main %}
+  <h1 class="display-3 text-center">Generate</h1>
+
+  <div class="col-lg-8 offset-lg-2 px-0">
+
+    <div class="mb-3">
+      <label for="locationName" class="form-label">Location Name</label>
+      <input type="text"
+             class="form-control"
+             id="locationName"
+             placeholder="Ibiza, Spain">
+    </div>
+    <div class="mb-3">
+      <label for="longitude" class="form-label">Longitude</label>
+      <input type="number" class="form-control" id="longitude" placeholder="1.433">
+    </div>
+    <div class="mb-3">
+      <label for="latitude" class="form-label">Latitude</label>
+      <input type="number" class="form-control" id="latitude" placeholder="38.909">
+    </div>
+    <div class="mb-3">
+      <label for="elevation" class="form-label">Elevation</label>
+      <input type="number" class="form-control" id="elevation" placeholder="12">
+    </div>
+    <div class="mb-3">
+      <label for="timezone" class="form-label">Timezone</label>
+      <input type="text"
+             class="form-control"
+             id="timezone"
+             placeholder="Europe/Madrid">
+    </div>
+
+    <div class="d-grid gap-2 col-4 mx-auto">
+      <button class="btn btn-primary btn-lg" type="submit">Plot Graph</button>
+    </div>
+  </div>
+
+  <div class="col text-center">
+    <img src="{{ url_for('static', path='/images/sun-graph_ibiza-spain.png') }}"
+         class="rounded my-3 w-50"
+         alt="...">
+  </div>
+
+  <script src="{{ url_for('static', path='/js/main.js') }}"></script>
+{% endblock main %}

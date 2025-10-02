@@ -12,7 +12,8 @@ def favicon(request):
 
 
 routes = [
-    Route("/", views.home, name="home"),
-    Route("/favicon.ico", favicon, name="favicon"),
     Mount("/static", static, name="static"),
+    Route("/favicon.ico", favicon, name="favicon"),
+    Route("/", views.home, name="home"),
+    Route("/generate", views.generate, name="generate"),
 ]
